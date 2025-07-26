@@ -5,8 +5,10 @@ const logger = require("../utils/logger");
 // Verify JWT token
 const authenticateToken = async (req, res, next) => {
   try {
-    console.log(`🔐 [AUTH MIDDLEWARE] Checking authentication for ${req.method} ${req.path}`);
-    
+    console.log(
+      `🔐 [AUTH MIDDLEWARE] Checking authentication for ${req.method} ${req.path}`
+    );
+
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
 
@@ -19,10 +21,12 @@ const authenticateToken = async (req, res, next) => {
     }
 
     console.log(`🔍 [AUTH MIDDLEWARE] Verifying token...`);
-    
+
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log(`👤 [AUTH MIDDLEWARE] Token valid for user: ${decoded.username}`);
+    console.log(
+      `👤 [AUTH MIDDLEWARE] Token valid for user: ${decoded.username}`
+    );
 
     // Get fresh user data from database
     const users = await executeQuery(
@@ -32,7 +36,9 @@ const authenticateToken = async (req, res, next) => {
     );
 
     if (!users || users.length === 0) {
-      console.log(`❌ [AUTH MIDDLEWARE] User not found in database: ${decoded.userId}`);
+      console.log(
+        `❌ [AUTH MIDDLEWARE] User not found in database: ${decoded.userId}`
+      );
       return res.status(401).json({
         success: false,
         message: "ผู้ใช้ไม่มีในระบบ",
@@ -43,7 +49,9 @@ const authenticateToken = async (req, res, next) => {
 
     // Check if user is still active
     if (!user.is_active) {
-      console.log(`❌ [AUTH MIDDLEWARE] User account disabled: ${user.username}`);
+      console.log(
+        `❌ [AUTH MIDDLEWARE] User account disabled: ${user.username}`
+      );
       return res.status(401).json({
         success: false,
         message: "บัญชีถูกปิดการใช้งาน",
@@ -52,14 +60,18 @@ const authenticateToken = async (req, res, next) => {
 
     // Check approval status
     if (user.approval_status !== "approved") {
-      console.log(`❌ [AUTH MIDDLEWARE] User not approved: ${user.username}, Status: ${user.approval_status}`);
+      console.log(
+        `❌ [AUTH MIDDLEWARE] User not approved: ${user.username}, Status: ${user.approval_status}`
+      );
       return res.status(401).json({
         success: false,
         message: "บัญชียังไม่ได้รับการอนุมัติ",
       });
     }
 
-    console.log(`✅ [AUTH MIDDLEWARE] Authentication successful for user: ${user.username}`);
+    console.log(
+      `✅ [AUTH MIDDLEWARE] Authentication successful for user: ${user.username}`
+    );
 
     // Add user info to request object
     req.user = user;

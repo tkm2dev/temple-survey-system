@@ -188,7 +188,9 @@ router.post("/change-password", authenticateToken, async (req, res) => {
     const { currentPassword, newPassword } = req.body;
     const userId = req.user.user_id;
 
-    console.log(`🔑 [CHANGE PASSWORD] User ${req.user.username} requesting password change`);
+    console.log(
+      `🔑 [CHANGE PASSWORD] User ${req.user.username} requesting password change`
+    );
 
     // Validation
     if (!currentPassword || !newPassword) {
@@ -225,7 +227,9 @@ router.post("/change-password", authenticateToken, async (req, res) => {
     );
 
     if (!isCurrentPasswordValid) {
-      console.log(`❌ [CHANGE PASSWORD] Invalid current password for user: ${req.user.username}`);
+      console.log(
+        `❌ [CHANGE PASSWORD] Invalid current password for user: ${req.user.username}`
+      );
       return res.status(400).json({
         success: false,
         message: "รหัสผ่านปัจจุบันไม่ถูกต้อง",
@@ -252,7 +256,9 @@ router.post("/change-password", authenticateToken, async (req, res) => {
       req.ip
     );
 
-    console.log(`✅ [CHANGE PASSWORD] Password changed successfully for user: ${req.user.username}`);
+    console.log(
+      `✅ [CHANGE PASSWORD] Password changed successfully for user: ${req.user.username}`
+    );
 
     res.json({
       success: true,
@@ -273,7 +279,9 @@ router.post("/change-password", authenticateToken, async (req, res) => {
 // @access  Private
 router.get("/me", authenticateToken, async (req, res) => {
   try {
-    console.log(`👤 [GET PROFILE] User ${req.user.username} requesting profile info`);
+    console.log(
+      `👤 [GET PROFILE] User ${req.user.username} requesting profile info`
+    );
 
     // Get fresh user data (already done in middleware, but get complete info)
     const users = await executeQuery(
@@ -292,7 +300,9 @@ router.get("/me", authenticateToken, async (req, res) => {
     }
 
     const user = users[0];
-    console.log(`✅ [GET PROFILE] Profile data retrieved for user: ${user.username}`);
+    console.log(
+      `✅ [GET PROFILE] Profile data retrieved for user: ${user.username}`
+    );
 
     res.json({
       success: true,
@@ -331,7 +341,9 @@ router.post("/logout", authenticateToken, async (req, res) => {
       req.ip
     );
 
-    console.log(`✅ [LOGOUT] User ${req.user.username} logged out successfully`);
+    console.log(
+      `✅ [LOGOUT] User ${req.user.username} logged out successfully`
+    );
 
     res.json({
       success: true,

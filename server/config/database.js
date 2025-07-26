@@ -11,8 +11,9 @@ const dbConfig = {
   charset: "utf8mb4",
   connectionLimit: 10,
   acquireTimeout: 60000,
-  timeout: 60000,
-  reconnect: true,
+  idleTimeout: 600000,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
 };
 
 // Create connection pool

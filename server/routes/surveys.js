@@ -129,6 +129,218 @@ router.get("/", async (req, res) => {
   }
 });
 
+// @route   GET /api/surveys/paginated
+// @desc    Get paginated surveys (same as above but with different endpoint for frontend compatibility)
+// @access  Private
+router.get("/paginated", async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      search = "",
+      status = "",
+      type_id = "",
+      created_by = "",
+    } = req.query;
+
+    const offset = (page - 1) * limit;
+
+    let query = `
+      SELECT 
+        st.target_id as id, st.target_name as name, st.address, st.district, st.province,
+        st.status, st.created_at, st.updated_at,
+        stt.type_name as survey_type,
+        CONCAT(u.first_name, ' ', u.last_name) as created_by_name
+      FROM survey_targets st
+      LEFT JOIN survey_target_types stt ON st.type_id = stt.type_id
+      LEFT JOIN users u ON st.created_by = u.user_id
+      WHERE 1=1
+    `;
+
+    let countQuery = `
+      SELECT COUNT(*) as total 
+      FROM survey_targets st
+      LEFT JOIN survey_target_types stt ON st.type_id = stt.type_id
+      WHERE 1=1
+    `;
+
+    const params = [];
+    const countParams = [];
+
+    // Role-based filtering
+    if (req.user.role === "Surveyor") {
+      query += ` AND st.created_by = ?`;
+      countQuery += ` AND st.created_by = ?`;
+      params.push(req.user.user_id);
+      countParams.push(req.user.user_id);
+    }
+
+    // Search filter
+    if (search) {
+      query += ` AND (st.target_name LIKE ? OR st.address LIKE ? OR st.district LIKE ? OR st.province LIKE ?)`;
+      countQuery += ` AND (st.target_name LIKE ? OR st.address LIKE ? OR st.district LIKE ? OR st.province LIKE ?)`;
+      const searchTerm = `%${search}%`;
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+      countParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    // Status filter
+    if (status) {
+      query += ` AND st.status = ?`;
+      countQuery += ` AND st.status = ?`;
+      params.push(status);
+      countParams.push(status);
+    }
+
+    // Type filter
+    if (type_id) {
+      query += ` AND st.type_id = ?`;
+      countQuery += ` AND st.type_id = ?`;
+      params.push(type_id);
+      countParams.push(type_id);
+    }
+
+    // Add pagination
+    query += ` ORDER BY st.updated_at DESC LIMIT ? OFFSET ?`;
+    params.push(parseInt(limit), parseInt(offset));
+
+    // Execute queries
+    const [surveys, totalResult] = await Promise.all([
+      executeQuery(query, params),
+      executeQuery(countQuery, countParams),
+    ]);
+
+    const total = totalResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      success: true,
+      data: surveys,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages,
+        totalRecords: total,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
+  } catch (error) {
+    logger.error("Get paginated surveys error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการดึงข้อมูลการสำรวจ",
+    });
+  }
+});
+
+// @route   GET /api/surveys/statistics
+// @desc    Get survey statistics for dashboard
+// @access  Private
+router.get("/statistics", async (req, res) => {
+  try {
+    // Get total surveys count
+    const totalSurveysResult = await executeQuery(
+      "SELECT COUNT(*) as total FROM survey_targets"
+    );
+    const totalSurveys = totalSurveysResult[0].total;
+
+    // Get surveys by status
+    const statusStatsResult = await executeQuery(`
+      SELECT 
+        status,
+        COUNT(*) as count
+      FROM survey_targets 
+      GROUP BY status
+    `);
+
+    // Get surveys by type
+    const typeStatsResult = await executeQuery(`
+      SELECT 
+        stt.type_name,
+        COUNT(st.target_id) as count
+      FROM survey_target_types stt
+      LEFT JOIN survey_targets st ON stt.type_id = st.type_id
+      GROUP BY stt.type_id, stt.type_name
+    `);
+
+    // Get surveys by province (top 10)
+    const provinceStatsResult = await executeQuery(`
+      SELECT 
+        province,
+        COUNT(*) as count
+      FROM survey_targets 
+      WHERE province IS NOT NULL AND province != ''
+      GROUP BY province
+      ORDER BY count DESC
+      LIMIT 10
+    `);
+
+    // Get recent surveys (last 7 days)
+    const recentSurveysResult = await executeQuery(`
+      SELECT COUNT(*) as count
+      FROM survey_targets 
+      WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+    `);
+    const recentSurveys = recentSurveysResult[0].count;
+
+    // Get completed surveys this month
+    const monthlyCompletedResult = await executeQuery(`
+      SELECT COUNT(*) as count
+      FROM survey_targets 
+      WHERE status = 'Approved' 
+      AND MONTH(updated_at) = MONTH(NOW()) 
+      AND YEAR(updated_at) = YEAR(NOW())
+    `);
+    const monthlyCompleted = monthlyCompletedResult[0].count;
+
+    // Prepare status statistics with default values
+    const statusMap = {
+      Draft: 0,
+      "Pending Review": 0,
+      Approved: 0,
+      "Needs Revision": 0,
+    };
+
+    statusStatsResult.forEach((stat) => {
+      statusMap[stat.status] = stat.count;
+    });
+
+    // Calculate completion rate
+    const completionRate =
+      totalSurveys > 0
+        ? ((statusMap["Approved"] / totalSurveys) * 100).toFixed(1)
+        : 0;
+
+    res.json({
+      success: true,
+      data: {
+        overview: {
+          totalSurveys,
+          recentSurveys,
+          monthlyCompleted,
+          completionRate: parseFloat(completionRate),
+        },
+        statusBreakdown: Object.entries(statusMap).map(([status, count]) => ({
+          status,
+          count,
+        })),
+        typeBreakdown: typeStatsResult,
+        provinceBreakdown: provinceStatsResult,
+        trends: {
+          weeklyGrowth: recentSurveys,
+          monthlyCompletion: monthlyCompleted,
+        },
+      },
+    });
+  } catch (error) {
+    logger.error("Get survey statistics error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการดึงสถิติการสำรวจ",
+    });
+  }
+});
+
 // @route   GET /api/surveys/:id
 // @desc    Get survey by ID with full details
 // @access  Private
@@ -456,10 +668,10 @@ router.put(
 );
 
 // Bulk operations
-router.patch("/bulk/status", auth, async (req, res) => {
+router.patch("/bulk/status", authenticateToken, async (req, res) => {
   try {
     const { surveyIds, status } = req.body;
-    
+
     if (!surveyIds || !Array.isArray(surveyIds) || surveyIds.length === 0) {
       return res.status(400).json({ message: "Survey IDs array is required" });
     }
@@ -499,10 +711,10 @@ router.patch("/bulk/status", auth, async (req, res) => {
   }
 });
 
-router.delete("/bulk", auth, async (req, res) => {
+router.delete("/bulk", authenticateToken, async (req, res) => {
   try {
     const { surveyIds } = req.body;
-    
+
     if (!surveyIds || !Array.isArray(surveyIds) || surveyIds.length === 0) {
       return res.status(400).json({ message: "Survey IDs array is required" });
     }
@@ -514,10 +726,9 @@ router.delete("/bulk", auth, async (req, res) => {
     );
 
     // Delete surveys
-    const result = await db.query(
-      "DELETE FROM surveys WHERE id IN (?)",
-      [surveyIds]
-    );
+    const result = await db.query("DELETE FROM surveys WHERE id IN (?)", [
+      surveyIds,
+    ]);
 
     // Log audit entries
     for (const survey of surveysData) {

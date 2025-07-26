@@ -28,10 +28,18 @@
       </div>
 
       <h2>
-        <i class="bi bi-plus-circle me-2"></i>
+        <i class="bi bi-plus-circle me-2 text-primary"></i>
         สร้างการสำรวจใหม่
       </h2>
+      <p class="text-muted mb-0">กรอกข้อมูลการสำรวจให้ครบถ้วนตามขั้นตอน</p>
     </div>
+
+    <!-- Progress Indicator -->
+    <SurveyFormProgress
+      :current-step="currentFormStep"
+      :form-data="form"
+      :is-temple-type="isTempleType"
+    />
 
     <!-- Form Section -->
     <form @submit.prevent="handleSubmit" class="survey-form">
@@ -71,9 +79,9 @@
                   ประเภทการสำรวจ <span class="text-danger">*</span>
                 </label>
                 <select
-                  v-model="form.survey_type"
+                  v-model="form.type_id"
                   class="form-select"
-                  :class="{ 'is-invalid': errors.survey_type }"
+                  :class="{ 'is-invalid': errors.type_id }"
                   id="surveyType"
                   required
                   @change="onSurveyTypeChange"
@@ -81,14 +89,36 @@
                   <option value="">เลือกประเภทการสำรวจ</option>
                   <option
                     v-for="type in surveyTypes"
-                    :key="type.id"
-                    :value="type.name"
+                    :key="type.type_id"
+                    :value="type.type_id"
                   >
-                    {{ type.name }}
+                    {{ type.type_name }}
                   </option>
                 </select>
-                <div v-if="errors.survey_type" class="invalid-feedback">
-                  {{ errors.survey_type }}
+                <div v-if="errors.type_id" class="invalid-feedback">
+                  {{ errors.type_id }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-12">
+              <div class="mb-3">
+                <label for="address" class="form-label">
+                  ที่อยู่ <span class="text-danger">*</span>
+                </label>
+                <textarea
+                  v-model="form.address"
+                  class="form-control"
+                  :class="{ 'is-invalid': errors.address }"
+                  id="address"
+                  rows="2"
+                  placeholder="ระบุที่อยู่โดยละเอียด"
+                  required
+                ></textarea>
+                <div v-if="errors.address" class="invalid-feedback">
+                  {{ errors.address }}
                 </div>
               </div>
             </div>
@@ -182,50 +212,75 @@
           </div>
 
           <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-4">
               <div class="mb-3">
-                <label for="surveyDate" class="form-label">
-                  วันที่เริ่มสำรวจ <span class="text-danger">*</span>
-                </label>
+                <label for="postalCode" class="form-label">รหัสไปรษณีย์</label>
                 <input
-                  v-model="form.survey_date"
-                  type="date"
+                  v-model="form.postal_code"
+                  type="text"
                   class="form-control"
-                  :class="{ 'is-invalid': errors.survey_date }"
-                  id="surveyDate"
-                  required
-                  :min="today"
+                  :class="{ 'is-invalid': errors.postal_code }"
+                  id="postalCode"
+                  placeholder="XXXXX"
+                  maxlength="5"
                 />
-                <div v-if="errors.survey_date" class="invalid-feedback">
-                  {{ errors.survey_date }}
+                <div v-if="errors.postal_code" class="invalid-feedback">
+                  {{ errors.postal_code }}
                 </div>
               </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-4">
               <div class="mb-3">
-                <label for="surveyor" class="form-label">
-                  ผู้สำรวจ <span class="text-danger">*</span>
-                </label>
-                <select
-                  v-model="form.surveyor_id"
-                  class="form-select"
-                  :class="{ 'is-invalid': errors.surveyor_id }"
-                  id="surveyor"
-                  required
-                  :disabled="isCurrentUserSurveyor"
+                <label for="latitude" class="form-label"
+                  >พิกัด GPS - ละติจูด</label
                 >
-                  <option value="">เลือกผู้สำรวจ</option>
-                  <option
-                    v-for="surveyor in surveyors"
-                    :key="surveyor.id"
-                    :value="surveyor.id"
+                <div class="input-group">
+                  <input
+                    v-model.number="form.gps_latitude"
+                    type="number"
+                    class="form-control"
+                    :class="{ 'is-invalid': errors.gps_latitude }"
+                    id="latitude"
+                    step="any"
+                    placeholder="13.7563"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    @click="getCurrentLocation"
+                    :disabled="gettingLocation"
+                    title="ใช้ตำแหน่งปัจจุบัน"
                   >
-                    {{ surveyor.name }}
-                  </option>
-                </select>
-                <div v-if="errors.surveyor_id" class="invalid-feedback">
-                  {{ errors.surveyor_id }}
+                    <i
+                      v-if="gettingLocation"
+                      class="bi bi-arrow-clockwise spin"
+                    ></i>
+                    <i v-else class="bi bi-geo-alt"></i>
+                  </button>
+                </div>
+                <div v-if="errors.gps_latitude" class="invalid-feedback">
+                  {{ errors.gps_latitude }}
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label for="longitude" class="form-label"
+                  >พิกัด GPS - ลองจิจูด</label
+                >
+                <input
+                  v-model.number="form.gps_longitude"
+                  type="number"
+                  class="form-control"
+                  :class="{ 'is-invalid': errors.gps_longitude }"
+                  id="longitude"
+                  step="any"
+                  placeholder="100.5018"
+                />
+                <div v-if="errors.gps_longitude" class="invalid-feedback">
+                  {{ errors.gps_longitude }}
                 </div>
               </div>
             </div>
@@ -249,10 +304,10 @@
       </div>
 
       <!-- Temple Details Card (show only for Temple survey type) -->
-      <div v-if="form.survey_type === 'Temple'" class="card mb-4">
+      <div v-if="isTempleType" class="card mb-4">
         <div class="card-header">
           <h5 class="mb-0">
-            <i class="bi bi-building me-2"></i>
+            <i class="bi bi-building me-2 text-primary"></i>
             ข้อมูลวัด
           </h5>
         </div>
@@ -260,47 +315,54 @@
           <div class="row">
             <div class="col-md-6">
               <div class="mb-3">
-                <label for="templeName" class="form-label">
-                  ชื่อวัด <span class="text-danger">*</span>
+                <label for="templeType" class="form-label">
+                  ประเภทวัด <span class="text-danger">*</span>
                 </label>
-                <input
-                  v-model="templeDetails.temple_name"
-                  type="text"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.temple_name }"
-                  id="templeName"
-                  placeholder="ระบุชื่อวัด"
+                <select
+                  v-model="templeDetails.temple_type_id"
+                  class="form-select"
+                  :class="{ 'is-invalid': errors.temple_type_id }"
+                  id="templeType"
                   required
-                />
-                <div v-if="errors.temple_name" class="invalid-feedback">
-                  {{ errors.temple_name }}
+                >
+                  <option value="">เลือกประเภทวัด</option>
+                  <option
+                    v-for="type in templeTypes"
+                    :key="type.id"
+                    :value="type.id"
+                  >
+                    {{ type.name }}
+                  </option>
+                </select>
+                <div v-if="errors.temple_type_id" class="invalid-feedback">
+                  {{ errors.temple_type_id }}
                 </div>
               </div>
             </div>
 
             <div class="col-md-6">
               <div class="mb-3">
-                <label for="sect" class="form-label">
-                  นิกาย <span class="text-danger">*</span>
+                <label for="denomination" class="form-label">
+                  สังกัด/นิกาย <span class="text-danger">*</span>
                 </label>
                 <select
-                  v-model="templeDetails.sect"
+                  v-model="templeDetails.denomination_id"
                   class="form-select"
-                  :class="{ 'is-invalid': errors.sect }"
-                  id="sect"
+                  :class="{ 'is-invalid': errors.denomination_id }"
+                  id="denomination"
                   required
                 >
-                  <option value="">เลือกนิกาย</option>
+                  <option value="">เลือกสังกัด/นิกาย</option>
                   <option
-                    v-for="sect in sects"
-                    :key="sect.id"
-                    :value="sect.name"
+                    v-for="denomination in denominations"
+                    :key="denomination.id"
+                    :value="denomination.id"
                   >
-                    {{ sect.name }}
+                    {{ denomination.name }}
                   </option>
                 </select>
-                <div v-if="errors.sect" class="invalid-feedback">
-                  {{ errors.sect }}
+                <div v-if="errors.denomination_id" class="invalid-feedback">
+                  {{ errors.denomination_id }}
                 </div>
               </div>
             </div>
@@ -330,114 +392,336 @@
 
             <div class="col-md-6">
               <div class="mb-3">
-                <label for="noviceCount" class="form-label">
-                  จำนวนเณร <span class="text-danger">*</span>
+                <label for="historySummary" class="form-label">
+                  ประวัติสรุป
                 </label>
-                <input
-                  v-model.number="templeDetails.novice_count"
-                  type="number"
+                <textarea
+                  v-model="templeDetails.history_summary"
                   class="form-control"
-                  :class="{ 'is-invalid': errors.novice_count }"
-                  id="noviceCount"
-                  min="0"
-                  placeholder="0"
-                  required
-                />
-                <div v-if="errors.novice_count" class="invalid-feedback">
-                  {{ errors.novice_count }}
+                  :class="{ 'is-invalid': errors.history_summary }"
+                  id="historySummary"
+                  rows="3"
+                  placeholder="ระบุประวัติสรุปของวัด (ถ้ามี)"
+                ></textarea>
+                <div v-if="errors.history_summary" class="invalid-feedback">
+                  {{ errors.history_summary }}
                 </div>
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div class="row">
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label for="phone" class="form-label">เบอร์โทรศัพท์</label>
-                <input
-                  v-model="templeDetails.phone"
-                  type="tel"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.phone }"
-                  id="phone"
-                  placeholder="0X-XXXX-XXXX"
-                />
-                <div v-if="errors.phone" class="invalid-feedback">
-                  {{ errors.phone }}
-                </div>
-              </div>
-            </div>
-
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label for="email" class="form-label">อีเมล</label>
-                <input
-                  v-model="templeDetails.email"
-                  type="email"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.email }"
-                  id="email"
-                  placeholder="example@domain.com"
-                />
-                <div v-if="errors.email" class="invalid-feedback">
-                  {{ errors.email }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label for="latitude" class="form-label">ละติจูด</label>
-                <input
-                  v-model.number="templeDetails.latitude"
-                  type="number"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.latitude }"
-                  id="latitude"
-                  step="any"
-                  placeholder="13.7563"
-                />
-                <div v-if="errors.latitude" class="invalid-feedback">
-                  {{ errors.latitude }}
-                </div>
-              </div>
-            </div>
-
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label for="longitude" class="form-label">ลองจิจูด</label>
-                <input
-                  v-model.number="templeDetails.longitude"
-                  type="number"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.longitude }"
-                  id="longitude"
-                  step="any"
-                  placeholder="100.5018"
-                />
-                <div v-if="errors.longitude" class="invalid-feedback">
-                  {{ errors.longitude }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <label for="description" class="form-label"
-              >รายละเอียดเพิ่มเติม</label
+      <!-- Personnel Card -->
+      <div class="card mb-4">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">
+            <i class="bi bi-people me-2 text-info"></i>
+            บุคลากรที่เกี่ยวข้อง
+          </h5>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-info"
+            @click="addPersonnel"
+          >
+            <i class="bi bi-plus me-1"></i>
+            เพิ่มบุคลากร
+          </button>
+        </div>
+        <div class="card-body">
+          <div
+            v-if="personnel.length === 0"
+            class="text-center text-muted py-3"
+          >
+            <i class="bi bi-person-plus fs-1 d-block mb-2"></i>
+            <p>ยังไม่มีข้อมูลบุคลากร</p>
+            <small
+              >คลิกปุ่ม "เพิ่มบุคลากร"
+              เพื่อเพิ่มข้อมูลบุคลากรที่เกี่ยวข้อง</small
             >
-            <textarea
-              v-model="templeDetails.description"
-              class="form-control"
-              :class="{ 'is-invalid': errors.description }"
-              id="description"
-              rows="3"
-              placeholder="ระบุรายละเอียดเพิ่มเติมเกี่ยวกับวัด (ถ้ามี)"
-            ></textarea>
-            <div v-if="errors.description" class="invalid-feedback">
-              {{ errors.description }}
+          </div>
+
+          <div v-else>
+            <div
+              v-for="(person, index) in personnel"
+              :key="index"
+              class="personnel-item p-3 mb-3 border rounded"
+            >
+              <div
+                class="d-flex justify-content-between align-items-start mb-3"
+              >
+                <h6 class="mb-0">
+                  <i class="bi bi-person me-2"></i>
+                  บุคลากรคนที่ {{ index + 1 }}
+                </h6>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  @click="removePersonnel(index)"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+
+              <div class="row">
+                <div class="col-md-3">
+                  <div class="mb-3">
+                    <label class="form-label">บทบาท/หน้าที่</label>
+                    <select
+                      v-model="person.role"
+                      class="form-select form-select-sm"
+                      :class="{
+                        'is-invalid': errors[`personnel_${index}_role`],
+                      }"
+                    >
+                      <option value="">เลือกบทบาท</option>
+                      <option value="เจ้าอาวาส">เจ้าอาวาس</option>
+                      <option value="รองเจ้าอาวาส">รองเจ้าอาวาส</option>
+                      <option value="เลขานุการ">เลขานุการ</option>
+                      <option value="เหรัญญิก">เหรัญญิก</option>
+                      <option value="กรรมการ">กรรมการ</option>
+                      <option value="อื่นๆ">อื่นๆ</option>
+                    </select>
+                    <div
+                      v-if="errors[`personnel_${index}_role`]"
+                      class="invalid-feedback"
+                    >
+                      {{ errors[`personnel_${index}_role`] }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-3">
+                  <div class="mb-3">
+                    <label class="form-label">ชื่อ</label>
+                    <input
+                      v-model="person.first_name"
+                      type="text"
+                      class="form-control form-control-sm"
+                      :class="{
+                        'is-invalid': errors[`personnel_${index}_first_name`],
+                      }"
+                      placeholder="ชื่อ"
+                    />
+                    <div
+                      v-if="errors[`personnel_${index}_first_name`]"
+                      class="invalid-feedback"
+                    >
+                      {{ errors[`personnel_${index}_first_name`] }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-3">
+                  <div class="mb-3">
+                    <label class="form-label">นามสกุล</label>
+                    <input
+                      v-model="person.last_name"
+                      type="text"
+                      class="form-control form-control-sm"
+                      :class="{
+                        'is-invalid': errors[`personnel_${index}_last_name`],
+                      }"
+                      placeholder="นามสกุล"
+                    />
+                    <div
+                      v-if="errors[`personnel_${index}_last_name`]"
+                      class="invalid-feedback"
+                    >
+                      {{ errors[`personnel_${index}_last_name`] }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-3">
+                  <div class="mb-3">
+                    <label class="form-label">เบอร์โทรศัพท์</label>
+                    <input
+                      v-model="person.phone"
+                      type="tel"
+                      class="form-control form-control-sm"
+                      :class="{
+                        'is-invalid': errors[`personnel_${index}_phone`],
+                      }"
+                      placeholder="0X-XXXX-XXXX"
+                    />
+                    <div
+                      v-if="errors[`personnel_${index}_phone`]"
+                      class="invalid-feedback"
+                    >
+                      {{ errors[`personnel_${index}_phone`] }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bank Accounts Card -->
+      <div class="card mb-4">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">
+            <i class="bi bi-bank me-2 text-success"></i>
+            บัญชีธนาคาร
+          </h5>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-success"
+            @click="addBankAccount"
+          >
+            <i class="bi bi-plus me-1"></i>
+            เพิ่มบัญชี
+          </button>
+        </div>
+        <div class="card-body">
+          <div
+            v-if="bankAccounts.length === 0"
+            class="text-center text-muted py-3"
+          >
+            <i class="bi bi-bank fs-1 d-block mb-2"></i>
+            <p>ยังไม่มีข้อมูลบัญชีธนาคาร</p>
+            <small>คลิกปุ่ม "เพิ่มบัญชี" เพื่อเพิ่มข้อมูลบัญชีธนาคาร</small>
+          </div>
+
+          <div v-else>
+            <div
+              v-for="(account, index) in bankAccounts"
+              :key="index"
+              class="bank-account-item p-3 mb-3 border rounded"
+            >
+              <div
+                class="d-flex justify-content-between align-items-start mb-3"
+              >
+                <h6 class="mb-0">
+                  <i class="bi bi-bank me-2"></i>
+                  บัญชีที่ {{ index + 1 }}
+                </h6>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  @click="removeBankAccount(index)"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label"
+                      >ธนาคาร <span class="text-danger">*</span></label
+                    >
+                    <select
+                      v-model="account.bank_name"
+                      class="form-select form-select-sm"
+                      :class="{
+                        'is-invalid': errors[`bank_${index}_bank_name`],
+                      }"
+                    >
+                      <option value="">เลือกธนาคาร</option>
+                      <option value="ธนาคารกรุงเทพ">ธนาคารกรุงเทพ</option>
+                      <option value="ธนาคารกสิกรไทย">ธนาคารกสิกรไทย</option>
+                      <option value="ธนาคารกรุงไทย">ธนาคารกรุงไทย</option>
+                      <option value="ธนาคารทหารไทยธนชาต">
+                        ธนาคารทหารไทยธนชาต
+                      </option>
+                      <option value="ธนาคารไทยพาณิชย์">ธนาคารไทยพาณิชย์</option>
+                      <option value="ธนาคารกรุงศรีอยุธยา">
+                        ธนาคารกรุงศรีอยุธยา
+                      </option>
+                      <option value="ธนาคารออมสิน">ธนาคารออมสิน</option>
+                      <option value="ธนาคารอาคารสงเคราะห์">
+                        ธนาคารอาคารสงเคราะห์
+                      </option>
+                      <option value="ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร">
+                        ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร
+                      </option>
+                      <option value="อื่นๆ">อื่นๆ</option>
+                    </select>
+                    <div
+                      v-if="errors[`bank_${index}_bank_name`]"
+                      class="invalid-feedback"
+                    >
+                      {{ errors[`bank_${index}_bank_name`] }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label"
+                      >เลขที่บัญชี <span class="text-danger">*</span></label
+                    >
+                    <input
+                      v-model="account.account_number"
+                      type="text"
+                      class="form-control form-control-sm"
+                      :class="{
+                        'is-invalid': errors[`bank_${index}_account_number`],
+                      }"
+                      placeholder="XXX-X-XXXXX-X"
+                    />
+                    <div
+                      v-if="errors[`bank_${index}_account_number`]"
+                      class="invalid-feedback"
+                    >
+                      {{ errors[`bank_${index}_account_number`] }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label"
+                      >ชื่อบัญชี <span class="text-danger">*</span></label
+                    >
+                    <input
+                      v-model="account.account_name"
+                      type="text"
+                      class="form-control form-control-sm"
+                      :class="{
+                        'is-invalid': errors[`bank_${index}_account_name`],
+                      }"
+                      placeholder="ชื่อบัญชี"
+                    />
+                    <div
+                      v-if="errors[`bank_${index}_account_name`]"
+                      class="invalid-feedback"
+                    >
+                      {{ errors[`bank_${index}_account_name`] }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-12">
+                  <div class="mb-3">
+                    <label class="form-label">ผู้มีอำนาจเบิกจ่าย</label>
+                    <textarea
+                      v-model="account.signatories"
+                      class="form-control form-control-sm"
+                      :class="{
+                        'is-invalid': errors[`bank_${index}_signatories`],
+                      }"
+                      rows="2"
+                      placeholder="ระบุรายนามผู้มีอำนาจเบิกจ่าย (คั่นด้วยจุลภาค)"
+                    ></textarea>
+                    <div
+                      v-if="errors[`bank_${index}_signatories`]"
+                      class="invalid-feedback"
+                    >
+                      {{ errors[`bank_${index}_signatories`] }}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -531,10 +815,14 @@ import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import surveyService from "@/services/surveyService";
 import masterDataService from "@/services/masterDataService";
+import SurveyFormProgress from "@/components/surveys/SurveyFormProgress.vue";
 import moment from "moment";
 
 export default {
   name: "SurveyCreate",
+  components: {
+    SurveyFormProgress,
+  },
   setup() {
     const router = useRouter();
     const authStore = useAuthStore();
@@ -542,38 +830,44 @@ export default {
     const loading = ref(false);
     const fileInput = ref(null);
     const selectedFiles = ref([]);
+    const gettingLocation = ref(false);
+    const currentFormStep = ref(1);
 
     // Master data
     const surveyTypes = ref([]);
     const provinces = ref([]);
     const districts = ref([]);
     const subdistricts = ref([]);
-    const sects = ref([]);
+    const denominations = ref([]);
+    const templeTypes = ref([]);
     const surveyors = ref([]);
 
     // Form data
     const form = reactive({
       target_name: "",
-      survey_type: "",
+      type_id: "",
+      address: "",
       province: "",
       district: "",
       subdistrict: "",
-      survey_date: "",
-      surveyor_id: "",
+      postal_code: "",
+      gps_latitude: null,
+      gps_longitude: null,
       notes: "",
     });
 
     const templeDetails = reactive({
-      temple_name: "",
-      sect: "",
+      temple_type_id: "",
+      denomination_id: "",
       monk_count: 0,
-      novice_count: 0,
-      phone: "",
-      email: "",
-      latitude: null,
-      longitude: null,
-      description: "",
+      history_summary: "",
     });
+
+    // Personnel array
+    const personnel = ref([]);
+
+    // Bank accounts array
+    const bankAccounts = ref([]);
 
     const errors = ref({});
 
@@ -584,6 +878,14 @@ export default {
 
     const isCurrentUserSurveyor = computed(() => {
       return authStore.user?.role === "Surveyor";
+    });
+
+    const selectedSurveyType = computed(() => {
+      return surveyTypes.value.find((type) => type.type_id === form.type_id);
+    });
+
+    const isTempleType = computed(() => {
+      return selectedSurveyType.value?.type_name === "วัด";
     });
 
     // Methods
@@ -597,9 +899,13 @@ export default {
         const provincesResponse = await masterDataService.getProvinces();
         provinces.value = provincesResponse.data;
 
-        // Load sects
-        const sectsResponse = await masterDataService.getSects();
-        sects.value = sectsResponse.data;
+        // Load denominations
+        const denominationsResponse = await masterDataService.getSects();
+        denominations.value = denominationsResponse.data;
+
+        // Load temple types
+        const templeTypesResponse = await masterDataService.getTempleTypes();
+        templeTypes.value = templeTypesResponse.data;
 
         // Load surveyors
         const surveyorsResponse = await masterDataService.getSurveyors();
@@ -616,7 +922,7 @@ export default {
 
     const onSurveyTypeChange = () => {
       // Reset temple details when survey type changes
-      if (form.survey_type !== "Temple") {
+      if (!isTempleType.value) {
         Object.keys(templeDetails).forEach((key) => {
           if (typeof templeDetails[key] === "string") {
             templeDetails[key] = "";
@@ -626,7 +932,67 @@ export default {
             templeDetails[key] = null;
           }
         });
+
+        // Reset personnel and bank accounts for non-temple types
+        personnel.value = [];
+        bankAccounts.value = [];
       }
+    };
+
+    // Personnel management
+    const addPersonnel = () => {
+      personnel.value.push({
+        role: "",
+        first_name: "",
+        last_name: "",
+        phone: "",
+      });
+    };
+
+    const removePersonnel = (index) => {
+      personnel.value.splice(index, 1);
+    };
+
+    // Bank account management
+    const addBankAccount = () => {
+      bankAccounts.value.push({
+        bank_name: "",
+        account_number: "",
+        account_name: "",
+        signatories: "",
+      });
+    };
+
+    const removeBankAccount = (index) => {
+      bankAccounts.value.splice(index, 1);
+    };
+
+    // GPS location
+    const getCurrentLocation = () => {
+      if (!navigator.geolocation) {
+        alert("เบราว์เซอร์ของคุณไม่รองรับ GPS");
+        return;
+      }
+
+      gettingLocation.value = true;
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          form.gps_latitude = position.coords.latitude;
+          form.gps_longitude = position.coords.longitude;
+          gettingLocation.value = false;
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          alert("ไม่สามารถใช้ตำแหน่ง GPS ได้");
+          gettingLocation.value = false;
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000,
+        }
+      );
     };
 
     const onProvinceChange = async () => {
@@ -712,8 +1078,12 @@ export default {
         errors.value.target_name = "กรุณาระบุชื่อเป้าหมายการสำรวจ";
       }
 
-      if (!form.survey_type) {
-        errors.value.survey_type = "กรุณาเลือกประเภทการสำรวจ";
+      if (!form.type_id) {
+        errors.value.type_id = "กรุณาเลือกประเภทการสำรวจ";
+      }
+
+      if (!form.address.trim()) {
+        errors.value.address = "กรุณาระบุที่อยู่";
       }
 
       if (!form.province) {
@@ -728,39 +1098,43 @@ export default {
         errors.value.subdistrict = "กรุณาเลือกตำบล";
       }
 
-      if (!form.survey_date) {
-        errors.value.survey_date = "กรุณาระบุวันที่เริ่มสำรวจ";
-      }
-
-      if (!form.surveyor_id) {
-        errors.value.surveyor_id = "กรุณาเลือกผู้สำรวจ";
-      }
-
-      // Temple details validation
-      if (form.survey_type === "Temple") {
-        if (!templeDetails.temple_name.trim()) {
-          errors.value.temple_name = "กรุณาระบุชื่อวัด";
+      // Temple details validation (only for temple type)
+      if (isTempleType.value) {
+        if (!templeDetails.temple_type_id) {
+          errors.value.temple_type_id = "กรุณาเลือกประเภทวัด";
         }
 
-        if (!templeDetails.sect) {
-          errors.value.sect = "กรุณาเลือกนิกาย";
+        if (!templeDetails.denomination_id) {
+          errors.value.denomination_id = "กรุณาเลือกสังกัด/นิกาย";
         }
 
         if (templeDetails.monk_count < 0) {
           errors.value.monk_count = "จำนวนพระต้องเป็นจำนวนที่ไม่ต่ำกว่า 0";
         }
 
-        if (templeDetails.novice_count < 0) {
-          errors.value.novice_count = "จำนวนเณรต้องเป็นจำนวนที่ไม่ต่ำกว่า 0";
-        }
+        // Personnel validation
+        personnel.value.forEach((person, index) => {
+          if (person.role && !person.first_name.trim()) {
+            errors.value[`personnel_${index}_first_name`] = "กรุณาระบุชื่อ";
+          }
+          if (person.role && !person.last_name.trim()) {
+            errors.value[`personnel_${index}_last_name`] = "กรุณาระบุนามสกุล";
+          }
+        });
 
-        // Email validation
-        if (
-          templeDetails.email &&
-          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(templeDetails.email)
-        ) {
-          errors.value.email = "รูปแบบอีเมลไม่ถูกต้อง";
-        }
+        // Bank account validation
+        bankAccounts.value.forEach((account, index) => {
+          if (!account.bank_name) {
+            errors.value[`bank_${index}_bank_name`] = "กรุณาเลือกธนาคาร";
+          }
+          if (!account.account_number.trim()) {
+            errors.value[`bank_${index}_account_number`] =
+              "กรุณาระบุเลขที่บัญชี";
+          }
+          if (!account.account_name.trim()) {
+            errors.value[`bank_${index}_account_name`] = "กรุณาระบุชื่อบัญชี";
+          }
+        });
       }
 
       return Object.keys(errors.value).length === 0;
@@ -784,30 +1158,89 @@ export default {
           }
         });
 
-        // Temple details
-        if (form.survey_type === "Temple") {
+        // Set created_by to current user
+        formData.append("created_by", authStore.user.user_id);
+
+        // Temple details (only for temple type)
+        if (isTempleType.value) {
           Object.keys(templeDetails).forEach((key) => {
             if (templeDetails[key] !== null && templeDetails[key] !== "") {
-              formData.append(`temple_${key}`, templeDetails[key]);
+              formData.append(`temple_details[${key}]`, templeDetails[key]);
+            }
+          });
+
+          // Personnel data
+          personnel.value.forEach((person, index) => {
+            if (
+              person.role ||
+              person.first_name ||
+              person.last_name ||
+              person.phone
+            ) {
+              formData.append(`personnel[${index}][role]`, person.role);
+              formData.append(
+                `personnel[${index}][first_name]`,
+                person.first_name
+              );
+              formData.append(
+                `personnel[${index}][last_name]`,
+                person.last_name
+              );
+              formData.append(`personnel[${index}][phone]`, person.phone);
+            }
+          });
+
+          // Bank accounts data
+          bankAccounts.value.forEach((account, index) => {
+            if (
+              account.bank_name ||
+              account.account_number ||
+              account.account_name
+            ) {
+              formData.append(
+                `bank_accounts[${index}][bank_name]`,
+                account.bank_name
+              );
+              formData.append(
+                `bank_accounts[${index}][account_number]`,
+                account.account_number
+              );
+              formData.append(
+                `bank_accounts[${index}][account_name]`,
+                account.account_name
+              );
+              formData.append(
+                `bank_accounts[${index}][signatories]`,
+                account.signatories
+              );
             }
           });
         }
 
         // Files
-        selectedFiles.value.forEach((file) => {
-          formData.append("attachments", file);
+        selectedFiles.value.forEach((file, index) => {
+          formData.append(`attachments`, file);
         });
 
         // Create survey
         const response = await surveyService.createSurvey(formData);
 
-        // Redirect to survey detail
-        router.push(`/surveys/${response.data.id}`);
+        // Show success message
+        alert("สร้างการสำรวจสำเร็จ");
+
+        // Redirect to survey detail or list
+        if (response.data?.target_id) {
+          router.push(`/surveys/${response.data.target_id}`);
+        } else {
+          router.push("/surveys");
+        }
       } catch (err) {
         console.error("Error creating survey:", err);
 
         if (err.response?.data?.errors) {
           errors.value = err.response.data.errors;
+        } else if (err.response?.data?.message) {
+          alert(err.response.data.message);
         } else {
           alert("เกิดข้อผิดพลาดในการสร้างการสำรวจ กรุณาลองใหม่อีกครั้ง");
         }
@@ -826,23 +1259,40 @@ export default {
     });
 
     return {
+      // Data
       loading,
       fileInput,
       selectedFiles,
+      gettingLocation,
+      currentFormStep,
       surveyTypes,
       provinces,
       districts,
       subdistricts,
-      sects,
+      denominations,
+      templeTypes,
       surveyors,
       form,
       templeDetails,
+      personnel,
+      bankAccounts,
       errors,
+
+      // Computed
       today,
       isCurrentUserSurveyor,
+      selectedSurveyType,
+      isTempleType,
+
+      // Methods
       onSurveyTypeChange,
       onProvinceChange,
       onDistrictChange,
+      addPersonnel,
+      removePersonnel,
+      addBankAccount,
+      removeBankAccount,
+      getCurrentLocation,
       handleFileSelect,
       removeFile,
       getFileIcon,
@@ -885,6 +1335,31 @@ export default {
   padding-top: 1rem;
 }
 
+.personnel-item,
+.bank-account-item {
+  background: #f8f9fa;
+  transition: all 0.2s ease-in-out;
+}
+
+.personnel-item:hover,
+.bank-account-item:hover {
+  background: #e9ecef;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
   .survey-create {
@@ -902,16 +1377,32 @@ export default {
   .d-flex.gap-3 .btn {
     width: 100%;
   }
+
+  .personnel-item,
+  .bank-account-item {
+    margin-bottom: 1rem;
+  }
 }
 
 @media (max-width: 575.98px) {
   .row .col-md-6,
-  .row .col-md-4 {
+  .row .col-md-4,
+  .row .col-md-3 {
     margin-bottom: 1rem;
   }
 
   .file-preview {
     margin-bottom: 0.5rem;
+  }
+
+  .personnel-item .row,
+  .bank-account-item .row {
+    margin: 0;
+  }
+
+  .personnel-item .col-md-3,
+  .bank-account-item .col-md-4 {
+    padding: 0.25rem;
   }
 }
 </style>

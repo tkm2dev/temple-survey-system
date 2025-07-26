@@ -4,15 +4,16 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div class="pagination-info text-muted">
         <small>
-          แสดง {{ startRecord }} ถึง {{ endRecord }} จาก {{ totalRecords }} รายการ
+          แสดง {{ startRecord }} ถึง {{ endRecord }} จาก
+          {{ totalRecords }} รายการ
         </small>
       </div>
-      
+
       <!-- Items per page selector -->
       <div class="d-flex align-items-center">
         <label class="form-label me-2 mb-0">แสดงต่อหน้า:</label>
-        <select 
-          :value="itemsPerPage" 
+        <select
+          :value="itemsPerPage"
           @change="$emit('update:itemsPerPage', parseInt($event.target.value))"
           class="form-select form-select-sm"
           style="width: auto"
@@ -107,65 +108,68 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed } from "vue";
 
 export default {
-  name: 'DataTablePagination',
+  name: "DataTablePagination",
   props: {
     currentPage: {
       type: Number,
-      required: true
+      required: true,
     },
     totalPages: {
       type: Number,
-      required: true
+      required: true,
     },
     totalRecords: {
       type: Number,
-      required: true
+      required: true,
     },
     itemsPerPage: {
       type: Number,
-      default: 20
-    }
+      default: 20,
+    },
   },
-  emits: ['update:currentPage', 'update:itemsPerPage'],
+  emits: ["update:currentPage", "update:itemsPerPage"],
   setup(props, { emit }) {
-    const jumpToPage = ref('')
+    const jumpToPage = ref("");
 
     const visiblePages = computed(() => {
-      const pages = []
-      const start = Math.max(1, props.currentPage - 2)
-      const end = Math.min(props.totalPages, props.currentPage + 2)
+      const pages = [];
+      const start = Math.max(1, props.currentPage - 2);
+      const end = Math.min(props.totalPages, props.currentPage + 2);
 
       for (let i = start; i <= end; i++) {
-        pages.push(i)
+        pages.push(i);
       }
 
-      return pages
-    })
+      return pages;
+    });
 
     const startRecord = computed(() => {
-      return (props.currentPage - 1) * props.itemsPerPage + 1
-    })
+      return (props.currentPage - 1) * props.itemsPerPage + 1;
+    });
 
     const endRecord = computed(() => {
-      return Math.min(props.currentPage * props.itemsPerPage, props.totalRecords)
-    })
+      return Math.min(
+        props.currentPage * props.itemsPerPage,
+        props.totalRecords
+      );
+    });
 
     const changePage = (page) => {
       if (page >= 1 && page <= props.totalPages && page !== props.currentPage) {
-        emit('update:currentPage', page)
+        emit("update:currentPage", page);
       }
-    }
+    };
 
     const handleJumpToPage = () => {
-      const page = parseInt(jumpToPage.value)
+      const page = parseInt(jumpToPage.value);
       if (page >= 1 && page <= props.totalPages) {
-        changePage(page)
-        jumpToPage.value = ''
+        changePage(page);
+        jumpToPage.value = "";
       }
-    }
+    };
 
     return {
       jumpToPage,
@@ -173,10 +177,10 @@ export default {
       startRecord,
       endRecord,
       changePage,
-      handleJumpToPage
-    }
-  }
-}
+      handleJumpToPage,
+    };
+  },
+};
 </script>
 
 <style scoped>
@@ -218,7 +222,7 @@ export default {
   .pagination {
     justify-content: center;
   }
-  
+
   .pagination .page-item:not(.active):not(:first-child):not(:last-child) {
     display: none;
   }

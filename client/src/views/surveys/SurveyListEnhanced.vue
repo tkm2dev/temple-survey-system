@@ -241,7 +241,9 @@
               <li>
                 <button
                   class="dropdown-item"
-                  @click="handleBulkStatusChange(selectedItems, 'Pending Review')"
+                  @click="
+                    handleBulkStatusChange(selectedItems, 'Pending Review')
+                  "
                 >
                   <i class="bi bi-clock me-2 text-warning"></i>
                   รอตรวจสอบ
@@ -259,7 +261,9 @@
               <li>
                 <button
                   class="dropdown-item"
-                  @click="handleBulkStatusChange(selectedItems, 'Needs Revision')"
+                  @click="
+                    handleBulkStatusChange(selectedItems, 'Needs Revision')
+                  "
                 >
                   <i class="bi bi-exclamation-triangle me-2 text-danger"></i>
                   ต้องแก้ไข
@@ -322,67 +326,67 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import surveyService from '@/services/surveyService'
-import masterDataService from '@/services/masterDataService'
-import EnhancedDataTable from '@/components/common/EnhancedDataTable.vue'
-import moment from 'moment'
+import { ref, reactive, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
+import surveyService from "@/services/surveyService";
+import masterDataService from "@/services/masterDataService";
+import EnhancedDataTable from "@/components/common/EnhancedDataTable.vue";
+import moment from "moment";
 
 export default {
-  name: 'SurveyListEnhanced',
+  name: "SurveyListEnhanced",
   components: {
-    EnhancedDataTable
+    EnhancedDataTable,
   },
   setup() {
-    const router = useRouter()
-    const authStore = useAuthStore()
-    
+    const router = useRouter();
+    const authStore = useAuthStore();
+
     // Reactive data
-    const loading = ref(false)
-    const surveys = ref([])
-    const surveyTypes = ref([])
-    const currentPage = ref(1)
-    const totalPages = ref(1)
-    const totalRecords = ref(0)
-    const itemsPerPage = ref(20)
-    const confirmationTitle = ref('')
-    const confirmationMessage = ref('')
-    const confirmationBtnText = ref('')
-    const confirmationBtnClass = ref('')
-    const confirmedAction = ref(null)
-    const selectedSurveys = ref([])
+    const loading = ref(false);
+    const surveys = ref([]);
+    const surveyTypes = ref([]);
+    const currentPage = ref(1);
+    const totalPages = ref(1);
+    const totalRecords = ref(0);
+    const itemsPerPage = ref(20);
+    const confirmationTitle = ref("");
+    const confirmationMessage = ref("");
+    const confirmationBtnText = ref("");
+    const confirmationBtnClass = ref("");
+    const confirmedAction = ref(null);
+    const selectedSurveys = ref([]);
 
     const filters = reactive({
-      search: '',
-      status: '',
-      type_id: '',
-      created_by: ''
-    })
+      search: "",
+      status: "",
+      type_id: "",
+      created_by: "",
+    });
 
     // Computed properties
     const draftCount = computed(() => {
-      return surveys.value.filter(s => s.status === 'Draft').length
-    })
+      return surveys.value.filter((s) => s.status === "Draft").length;
+    });
 
     const pendingCount = computed(() => {
-      return surveys.value.filter(s => s.status === 'Pending Review').length
-    })
+      return surveys.value.filter((s) => s.status === "Pending Review").length;
+    });
 
     const approvedCount = computed(() => {
-      return surveys.value.filter(s => s.status === 'Approved').length
-    })
+      return surveys.value.filter((s) => s.status === "Approved").length;
+    });
 
     const revisionCount = computed(() => {
-      return surveys.value.filter(s => s.status === 'Needs Revision').length
-    })
+      return surveys.value.filter((s) => s.status === "Needs Revision").length;
+    });
 
     // Methods
     const loadSurveys = async (page = currentPage.value) => {
       try {
-        loading.value = true
-        
+        loading.value = true;
+
         const params = {
           page,
           limit: itemsPerPage.value,
@@ -390,218 +394,234 @@ export default {
           status: filters.status,
           type_id: filters.type_id,
           created_by: filters.created_by,
-        }
+        };
 
         // Remove empty parameters
         Object.keys(params).forEach((key) => {
-          if (params[key] === "" || params[key] === null || params[key] === undefined) {
-            delete params[key]
+          if (
+            params[key] === "" ||
+            params[key] === null ||
+            params[key] === undefined
+          ) {
+            delete params[key];
           }
-        })
+        });
 
-        const response = await surveyService.getSurveys(params)
+        const response = await surveyService.getSurveys(params);
 
         if (response.success) {
-          surveys.value = response.data.surveys || []
-          currentPage.value = response.data.pagination?.currentPage || 1
-          totalPages.value = response.data.pagination?.totalPages || 1
-          totalRecords.value = response.data.pagination?.totalRecords || 0
+          surveys.value = response.data.surveys || [];
+          currentPage.value = response.data.pagination?.currentPage || 1;
+          totalPages.value = response.data.pagination?.totalPages || 1;
+          totalRecords.value = response.data.pagination?.totalRecords || 0;
         }
       } catch (error) {
-        console.error('Failed to load surveys:', error)
-        surveys.value = []
+        console.error("Failed to load surveys:", error);
+        surveys.value = [];
       } finally {
-        loading.value = false
+        loading.value = false;
       }
-    }
+    };
 
     const loadSurveyTypes = async () => {
       try {
-        const response = await masterDataService.getSurveyTypes()
+        const response = await masterDataService.getSurveyTypes();
         if (response.success) {
-          surveyTypes.value = response.data
+          surveyTypes.value = response.data;
         }
       } catch (error) {
-        console.error('Failed to load survey types:', error)
+        console.error("Failed to load survey types:", error);
       }
-    }
+    };
 
     const changePage = (page) => {
-      currentPage.value = page
-      loadSurveys(page)
-    }
+      currentPage.value = page;
+      loadSurveys(page);
+    };
 
     const updateItemsPerPage = (newItemsPerPage) => {
-      itemsPerPage.value = newItemsPerPage
-      currentPage.value = 1
-      loadSurveys(1)
-    }
+      itemsPerPage.value = newItemsPerPage;
+      currentPage.value = 1;
+      loadSurveys(1);
+    };
 
     const debouncedSearch = debounce(() => {
-      currentPage.value = 1
-      loadSurveys(1)
-    }, 500)
+      currentPage.value = 1;
+      loadSurveys(1);
+    }, 500);
 
     const clearFilters = () => {
-      filters.search = ''
-      filters.status = ''
-      filters.type_id = ''
-      filters.created_by = ''
-      currentPage.value = 1
-      loadSurveys(1)
-    }
+      filters.search = "";
+      filters.status = "";
+      filters.type_id = "";
+      filters.created_by = "";
+      currentPage.value = 1;
+      loadSurveys(1);
+    };
 
     const showDeleteConfirmation = (survey) => {
-      confirmationTitle.value = 'ยืนยันการลบการสำรวจ'
-      confirmationMessage.value = `คุณต้องการลบการสำรวจ "${survey.target_name}" หรือไม่?`
-      confirmationBtnText.value = 'ลบ'
-      confirmationBtnClass.value = 'btn-danger'
-      confirmedAction.value = () => deleteSurvey(survey)
-      showConfirmationModal()
-    }
+      confirmationTitle.value = "ยืนยันการลบการสำรวจ";
+      confirmationMessage.value = `คุณต้องการลบการสำรวจ "${survey.target_name}" หรือไม่?`;
+      confirmationBtnText.value = "ลบ";
+      confirmationBtnClass.value = "btn-danger";
+      confirmedAction.value = () => deleteSurvey(survey);
+      showConfirmationModal();
+    };
 
     const deleteSurvey = async (survey) => {
       try {
-        await surveyService.deleteSurvey(survey.target_id)
-        surveys.value = surveys.value.filter(s => s.target_id !== survey.target_id)
-        totalRecords.value--
-        showToast(`ลบการสำรวจ "${survey.target_name}" สำเร็จ`, 'success')
-        hideConfirmationModal()
+        await surveyService.deleteSurvey(survey.target_id);
+        surveys.value = surveys.value.filter(
+          (s) => s.target_id !== survey.target_id
+        );
+        totalRecords.value--;
+        showToast(`ลบการสำรวจ "${survey.target_name}" สำเร็จ`, "success");
+        hideConfirmationModal();
       } catch (error) {
-        console.error('Error deleting survey:', error)
-        showToast('เกิดข้อผิดพลาดในการลบการสำรวจ', 'error')
+        console.error("Error deleting survey:", error);
+        showToast("เกิดข้อผิดพลาดในการลบการสำรวจ", "error");
       }
-    }
+    };
 
     const handleBulkStatusChange = async (items, status) => {
       try {
-        const surveyIds = items.map(survey => survey.target_id)
-        await surveyService.bulkUpdateStatus(surveyIds, status)
-        
+        const surveyIds = items.map((survey) => survey.target_id);
+        await surveyService.bulkUpdateStatus(surveyIds, status);
+
         // Update local data
-        items.forEach(survey => {
-          const localSurvey = surveys.value.find(s => s.target_id === survey.target_id)
+        items.forEach((survey) => {
+          const localSurvey = surveys.value.find(
+            (s) => s.target_id === survey.target_id
+          );
           if (localSurvey) {
-            localSurvey.status = status
+            localSurvey.status = status;
           }
-        })
-        
-        showToast(`อัปเดตสถานะ ${items.length} การสำรวจเป็น "${getStatusText(status)}" สำเร็จ`, 'success')
+        });
+
+        showToast(
+          `อัปเดตสถานะ ${items.length} การสำรวจเป็น "${getStatusText(
+            status
+          )}" สำเร็จ`,
+          "success"
+        );
       } catch (error) {
-        console.error('Error bulk status change:', error)
-        showToast('เกิดข้อผิดพลาดในการเปลี่ยนสถานะการสำรวจ', 'error')
+        console.error("Error bulk status change:", error);
+        showToast("เกิดข้อผิดพลาดในการเปลี่ยนสถานะการสำรวจ", "error");
       }
-    }
+    };
 
     const handleBulkDelete = (items) => {
-      confirmationTitle.value = 'ยืนยันการลบการสำรวจหลายรายการ'
-      confirmationMessage.value = `คุณต้องการลบการสำรวจ ${items.length} รายการหรือไม่?`
-      confirmationBtnText.value = 'ลบทั้งหมด'
-      confirmationBtnClass.value = 'btn-danger'
-      confirmedAction.value = () => bulkDeleteSurveys(items)
-      showConfirmationModal()
-    }
+      confirmationTitle.value = "ยืนยันการลบการสำรวจหลายรายการ";
+      confirmationMessage.value = `คุณต้องการลบการสำรวจ ${items.length} รายการหรือไม่?`;
+      confirmationBtnText.value = "ลบทั้งหมด";
+      confirmationBtnClass.value = "btn-danger";
+      confirmedAction.value = () => bulkDeleteSurveys(items);
+      showConfirmationModal();
+    };
 
     const bulkDeleteSurveys = async (items) => {
       try {
-        const surveyIds = items.map(survey => survey.target_id)
-        await surveyService.bulkDeleteSurveys(surveyIds)
-        
-        const deletedIds = items.map(survey => survey.target_id)
-        surveys.value = surveys.value.filter(survey => !deletedIds.includes(survey.target_id))
-        totalRecords.value -= items.length
-        
-        showToast(`ลบ ${items.length} การสำรวจสำเร็จ`, 'success')
-        hideConfirmationModal()
+        const surveyIds = items.map((survey) => survey.target_id);
+        await surveyService.bulkDeleteSurveys(surveyIds);
+
+        const deletedIds = items.map((survey) => survey.target_id);
+        surveys.value = surveys.value.filter(
+          (survey) => !deletedIds.includes(survey.target_id)
+        );
+        totalRecords.value -= items.length;
+
+        showToast(`ลบ ${items.length} การสำรวจสำเร็จ`, "success");
+        hideConfirmationModal();
       } catch (error) {
-        console.error('Error bulk deleting surveys:', error)
-        showToast('เกิดข้อผิดพลาดในการลบการสำรวจ', 'error')
+        console.error("Error bulk deleting surveys:", error);
+        showToast("เกิดข้อผิดพลาดในการลบการสำรวจ", "error");
       }
-    }
+    };
 
     const handleSelectionChange = (selected) => {
-      selectedSurveys.value = selected
-    }
+      selectedSurveys.value = selected;
+    };
 
     // Helper methods
     const getStatusClass = (status) => {
       const statusClasses = {
-        'Draft': 'bg-secondary',
-        'Pending Review': 'bg-warning',
-        'Approved': 'bg-success',
-        'Needs Revision': 'bg-danger'
-      }
-      return statusClasses[status] || 'bg-secondary'
-    }
+        Draft: "bg-secondary",
+        "Pending Review": "bg-warning",
+        Approved: "bg-success",
+        "Needs Revision": "bg-danger",
+      };
+      return statusClasses[status] || "bg-secondary";
+    };
 
     const getStatusIcon = (status) => {
       const statusIcons = {
-        'Draft': 'bi bi-file-earmark',
-        'Pending Review': 'bi bi-clock',
-        'Approved': 'bi bi-check-circle',
-        'Needs Revision': 'bi bi-exclamation-triangle'
-      }
-      return statusIcons[status] || 'bi bi-file-earmark'
-    }
+        Draft: "bi bi-file-earmark",
+        "Pending Review": "bi bi-clock",
+        Approved: "bi bi-check-circle",
+        "Needs Revision": "bi bi-exclamation-triangle",
+      };
+      return statusIcons[status] || "bi bi-file-earmark";
+    };
 
     const getStatusText = (status) => {
       const statusTexts = {
-        'Draft': 'ร่าง',
-        'Pending Review': 'รอตรวจสอบ',
-        'Approved': 'อนุมัติแล้ว',
-        'Needs Revision': 'ต้องแก้ไข'
-      }
-      return statusTexts[status] || status
-    }
+        Draft: "ร่าง",
+        "Pending Review": "รอตรวจสอบ",
+        Approved: "อนุมัติแล้ว",
+        "Needs Revision": "ต้องแก้ไข",
+      };
+      return statusTexts[status] || status;
+    };
 
     const formatDate = (date) => {
-      return moment(date).format('DD/MM/YYYY HH:mm')
-    }
+      return moment(date).format("DD/MM/YYYY HH:mm");
+    };
 
     // Utility functions
     function debounce(func, wait) {
-      let timeout
+      let timeout;
       return function executedFunction(...args) {
         const later = () => {
-          clearTimeout(timeout)
-          func(...args)
-        }
-        clearTimeout(timeout)
-        timeout = setTimeout(later, wait)
-      }
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
     }
 
-    const showToast = (message, type = 'info') => {
+    const showToast = (message, type = "info") => {
       // Toast implementation here (same as UserList)
-      console.log(`${type}: ${message}`)
-    }
+      console.log(`${type}: ${message}`);
+    };
 
     // Modal methods
     const showConfirmationModal = () => {
-      const modal = new bootstrap.Modal(document.getElementById('confirmationModal'))
-      modal.show()
-    }
+      const modal = new bootstrap.Modal(
+        document.getElementById("confirmationModal")
+      );
+      modal.show();
+    };
 
     const hideConfirmationModal = () => {
-      const modal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'))
+      const modal = bootstrap.Modal.getInstance(
+        document.getElementById("confirmationModal")
+      );
       if (modal) {
-        modal.hide()
+        modal.hide();
       }
-    }
+    };
 
     const executeConfirmedAction = () => {
       if (confirmedAction.value) {
-        confirmedAction.value()
+        confirmedAction.value();
       }
-    }
+    };
 
     // Lifecycle
     onMounted(async () => {
-      await Promise.all([
-        loadSurveyTypes(),
-        loadSurveys()
-      ])
-    })
+      await Promise.all([loadSurveyTypes(), loadSurveys()]);
+    });
 
     return {
       // Data
@@ -619,13 +639,13 @@ export default {
       confirmationBtnClass,
       selectedSurveys,
       authStore,
-      
+
       // Computed
       draftCount,
       pendingCount,
       approvedCount,
       revisionCount,
-      
+
       // Methods
       loadSurveys,
       changePage,
@@ -641,10 +661,10 @@ export default {
       getStatusIcon,
       getStatusText,
       formatDate,
-      executeConfirmedAction
-    }
-  }
-}
+      executeConfirmedAction,
+    };
+  },
+};
 </script>
 
 <style scoped>
@@ -657,7 +677,7 @@ export default {
   background: white;
   border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 1.5rem;
 }
 
@@ -702,7 +722,7 @@ export default {
   .stats-row {
     justify-content: center;
   }
-  
+
   .survey-header .d-flex {
     flex-direction: column;
     gap: 1rem;
@@ -713,11 +733,11 @@ export default {
   .stats-row {
     gap: 0.5rem;
   }
-  
+
   .stat-number {
     font-size: 1.25rem;
   }
-  
+
   .stat-label {
     font-size: 0.7rem;
   }

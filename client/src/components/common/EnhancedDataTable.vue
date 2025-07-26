@@ -38,12 +38,16 @@
                 </label>
               </div>
             </th>
-            
+
             <!-- Table Headers -->
             <slot name="headers"></slot>
-            
+
             <!-- Actions Column -->
-            <th v-if="showActionsColumn" class="text-center" style="width: 120px">
+            <th
+              v-if="showActionsColumn"
+              class="text-center"
+              style="width: 120px"
+            >
               การจัดการ
             </th>
           </tr>
@@ -52,24 +56,27 @@
           <tr v-if="loading" class="text-center">
             <td :colspan="columnCount" class="py-4">
               <div class="d-flex justify-content-center align-items-center">
-                <div class="spinner-border spinner-border-sm me-2" role="status">
+                <div
+                  class="spinner-border spinner-border-sm me-2"
+                  role="status"
+                >
                   <span class="visually-hidden">กำลังโหลด...</span>
                 </div>
                 กำลังโหลดข้อมูล...
               </div>
             </td>
           </tr>
-          
+
           <tr v-else-if="items.length === 0" class="text-center">
             <td :colspan="columnCount" class="py-4 text-muted">
               <i class="bi bi-inbox display-1"></i>
               <div class="mt-2">
                 <h5>ไม่พบข้อมูล</h5>
-                <p class="mb-0">{{ emptyMessage || 'ไม่มีข้อมูลในระบบ' }}</p>
+                <p class="mb-0">{{ emptyMessage || "ไม่มีข้อมูลในระบบ" }}</p>
               </div>
             </td>
           </tr>
-          
+
           <tr
             v-else
             v-for="(item, index) in items"
@@ -86,18 +93,23 @@
                   @change="toggleSelection(item)"
                   :id="`select-${getItemKey(item, index)}`"
                 />
-                <label 
-                  class="form-check-label" 
+                <label
+                  class="form-check-label"
                   :for="`select-${getItemKey(item, index)}`"
                 >
                   <span class="visually-hidden">เลือก</span>
                 </label>
               </div>
             </td>
-            
+
             <!-- Table Rows -->
-            <slot name="row" :item="item" :index="index" :isSelected="isSelected(item)"></slot>
-            
+            <slot
+              name="row"
+              :item="item"
+              :index="index"
+              :isSelected="isSelected(item)"
+            ></slot>
+
             <!-- Actions Column -->
             <td v-if="showActionsColumn" class="text-center">
               <slot name="actions" :item="item" :index="index"></slot>
@@ -121,139 +133,149 @@
 </template>
 
 <script>
-import { computed, ref } from 'vue'
-import BulkSelectionToolbar from './BulkSelectionToolbar.vue'
-import DataTablePagination from './DataTablePagination.vue'
+import { computed, ref } from "vue";
+import BulkSelectionToolbar from "./BulkSelectionToolbar.vue";
+import DataTablePagination from "./DataTablePagination.vue";
 
 export default {
-  name: 'EnhancedDataTable',
+  name: "EnhancedDataTable",
   components: {
     BulkSelectionToolbar,
-    DataTablePagination
+    DataTablePagination,
   },
   props: {
     items: {
       type: Array,
-      required: true
+      required: true,
     },
     loading: {
       type: Boolean,
-      default: false
+      default: false,
     },
     enableBulkSelection: {
       type: Boolean,
-      default: true
+      default: true,
     },
     enablePagination: {
       type: Boolean,
-      default: true
+      default: true,
     },
     showActionsColumn: {
       type: Boolean,
-      default: true
+      default: true,
     },
     canBulkEdit: {
       type: Boolean,
-      default: true
+      default: true,
     },
     canBulkStatus: {
       type: Boolean,
-      default: true
+      default: true,
     },
     canBulkDelete: {
       type: Boolean,
-      default: true
+      default: true,
     },
     currentPage: {
       type: Number,
-      default: 1
+      default: 1,
     },
     totalPages: {
       type: Number,
-      default: 1
+      default: 1,
     },
     totalRecords: {
       type: Number,
-      default: 0
+      default: 0,
     },
     itemsPerPage: {
       type: Number,
-      default: 20
+      default: 20,
     },
     itemKeyField: {
       type: String,
-      default: 'id'
+      default: "id",
     },
     emptyMessage: {
       type: String,
-      default: null
+      default: null,
     },
     headerCount: {
       type: Number,
-      default: 0
-    }
+      default: 0,
+    },
   },
   emits: [
-    'update:currentPage',
-    'update:itemsPerPage', 
-    'bulk-edit',
-    'bulk-status-change', 
-    'bulk-delete',
-    'selection-change'
+    "update:currentPage",
+    "update:itemsPerPage",
+    "bulk-edit",
+    "bulk-status-change",
+    "bulk-delete",
+    "selection-change",
   ],
   setup(props, { emit }) {
-    const selectedItems = ref([])
+    const selectedItems = ref([]);
 
     const columnCount = computed(() => {
-      let count = props.headerCount
-      if (props.enableBulkSelection) count++
-      if (props.showActionsColumn) count++
-      return count
-    })
+      let count = props.headerCount;
+      if (props.enableBulkSelection) count++;
+      if (props.showActionsColumn) count++;
+      return count;
+    });
 
     const isAllSelected = computed(() => {
-      return props.items.length > 0 && selectedItems.value.length === props.items.length
-    })
+      return (
+        props.items.length > 0 &&
+        selectedItems.value.length === props.items.length
+      );
+    });
 
     const isIndeterminate = computed(() => {
-      return selectedItems.value.length > 0 && selectedItems.value.length < props.items.length
-    })
+      return (
+        selectedItems.value.length > 0 &&
+        selectedItems.value.length < props.items.length
+      );
+    });
 
     const getItemKey = (item, index) => {
-      return item[props.itemKeyField] || item.id || index
-    }
+      return item[props.itemKeyField] || item.id || index;
+    };
 
     const isSelected = (item) => {
-      const itemKey = getItemKey(item)
-      return selectedItems.value.some(selected => getItemKey(selected) === itemKey)
-    }
+      const itemKey = getItemKey(item);
+      return selectedItems.value.some(
+        (selected) => getItemKey(selected) === itemKey
+      );
+    };
 
     const toggleSelection = (item) => {
-      const itemKey = getItemKey(item)
-      const index = selectedItems.value.findIndex(selected => getItemKey(selected) === itemKey)
-      
+      const itemKey = getItemKey(item);
+      const index = selectedItems.value.findIndex(
+        (selected) => getItemKey(selected) === itemKey
+      );
+
       if (index > -1) {
-        selectedItems.value.splice(index, 1)
+        selectedItems.value.splice(index, 1);
       } else {
-        selectedItems.value.push(item)
+        selectedItems.value.push(item);
       }
-      
-      emit('selection-change', selectedItems.value)
-    }
+
+      emit("selection-change", selectedItems.value);
+    };
 
     const toggleSelectAll = () => {
       if (isAllSelected.value) {
-        selectedItems.value = []
+        selectedItems.value = [];
       } else {
-        selectedItems.value = [...props.items]
+        selectedItems.value = [...props.items];
       }
-      emit('selection-change', selectedItems.value)
-    }
+      emit("selection-change", selectedItems.value);
+    };
 
     const clearSelection = () => {
-      selectedItems.value = []
-      emit('selection-change', selectedItems.value)
-    }
+      selectedItems.value = [];
+      emit("selection-change", selectedItems.value);
+    };
 
     return {
       selectedItems,
@@ -264,17 +286,17 @@ export default {
       isSelected,
       toggleSelection,
       toggleSelectAll,
-      clearSelection
-    }
-  }
-}
+      clearSelection,
+    };
+  },
+};
 </script>
 
 <style scoped>
 .enhanced-data-table {
   background: white;
   border-radius: 0.375rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 }
 
 .table-responsive {

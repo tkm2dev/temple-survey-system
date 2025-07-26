@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../config/database");
-const auth = require("../middleware/auth");
+const { authenticateToken } = require("../middleware/auth");
 
 // Get master data with pagination and filters
-router.get("/", auth, async (req, res) => {
+router.get("/", authenticateToken, async (req, res) => {
   try {
     const {
       page = 1,
@@ -23,7 +23,9 @@ router.get("/", auth, async (req, res) => {
 
     // Build WHERE conditions
     if (search) {
-      whereConditions.push("(key LIKE ? OR value LIKE ? OR description LIKE ?)");
+      whereConditions.push(
+        "(key LIKE ? OR value LIKE ? OR description LIKE ?)"
+      );
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
@@ -42,9 +44,10 @@ router.get("/", auth, async (req, res) => {
       params.push(data_type);
     }
 
-    const whereClause = whereConditions.length > 0 
-      ? `WHERE ${whereConditions.join(" AND ")}` 
-      : "";
+    const whereClause =
+      whereConditions.length > 0
+        ? `WHERE ${whereConditions.join(" AND ")}`
+        : "";
 
     // Count total records
     const countQuery = `SELECT COUNT(*) as total FROM master_data ${whereClause}`;
@@ -58,7 +61,11 @@ router.get("/", auth, async (req, res) => {
       ORDER BY ${sort} ${order}
       LIMIT ? OFFSET ?
     `;
-    const masterData = await db.query(dataQuery, [...params, parseInt(limit), offset]);
+    const masterData = await db.query(dataQuery, [
+      ...params,
+      parseInt(limit),
+      offset,
+    ]);
 
     res.json({
       success: true,
@@ -75,7 +82,7 @@ router.get("/", auth, async (req, res) => {
 });
 
 // Get master data statistics
-router.get("/statistics", auth, async (req, res) => {
+router.get("/statistics", authenticateToken, async (req, res) => {
   try {
     const statistics = await db.query(`
       SELECT 
@@ -94,7 +101,7 @@ router.get("/statistics", auth, async (req, res) => {
 });
 
 // Get categories
-router.get("/categories", auth, async (req, res) => {
+router.get("/categories", authenticateToken, async (req, res) => {
   try {
     const categories = await db.query(`
       SELECT DISTINCT category 
@@ -103,7 +110,7 @@ router.get("/categories", auth, async (req, res) => {
       ORDER BY category
     `);
 
-    res.json(categories.map(row => row.category));
+    res.json(categories.map((row) => row.category));
   } catch (error) {
     console.error("Error fetching categories:", error);
     res.status(500).json({ message: "Failed to fetch categories" });
@@ -111,10 +118,13 @@ router.get("/categories", auth, async (req, res) => {
 });
 
 // Get single master data by ID
-router.get("/:id", auth, async (req, res) => {
+router.get("/:id", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const masterData = await db.query("SELECT * FROM master_data WHERE id = ?", [id]);
+    const masterData = await db.query(
+      "SELECT * FROM master_data WHERE id = ?",
+      [id]
+    );
 
     if (masterData.length === 0) {
       return res.status(404).json({ message: "Master data not found" });
@@ -128,10 +138,13 @@ router.get("/:id", auth, async (req, res) => {
 });
 
 // Get master data by key
-router.get("/key/:key", auth, async (req, res) => {
+router.get("/key/:key", authenticateToken, async (req, res) => {
   try {
     const { key } = req.params;
-    const masterData = await db.query("SELECT * FROM master_data WHERE key = ?", [key]);
+    const masterData = await db.query(
+      "SELECT * FROM master_data WHERE key = ?",
+      [key]
+    );
 
     if (masterData.length === 0) {
       return res.status(404).json({ message: "Master data not found" });
@@ -145,7 +158,7 @@ router.get("/key/:key", auth, async (req, res) => {
 });
 
 // Get master data by category
-router.get("/category/:category", auth, async (req, res) => {
+router.get("/category/:category", authenticateToken, async (req, res) => {
   try {
     const { category } = req.params;
     const { status = "", data_type = "" } = req.query;
@@ -164,9 +177,12 @@ router.get("/category/:category", auth, async (req, res) => {
     }
 
     const whereClause = `WHERE ${whereConditions.join(" AND ")}`;
-    const masterData = await db.query(`
+    const masterData = await db.query(
+      `
       SELECT * FROM master_data ${whereClause} ORDER BY key
-    `, params);
+    `,
+      params
+    );
 
     res.json(masterData);
   } catch (error) {
@@ -176,24 +192,31 @@ router.get("/category/:category", auth, async (req, res) => {
 });
 
 // Create new master data
-router.post("/", auth, async (req, res) => {
+router.post("/", authenticateToken, async (req, res) => {
   try {
-    const { key, category, value, data_type, status = 'active', description } = req.body;
+    const {
+      key,
+      category,
+      value,
+      data_type,
+      status = "active",
+      description,
+    } = req.body;
 
     // Validate required fields
     if (!key || !category || !value || !data_type) {
-      return res.status(400).json({ 
-        message: "Key, category, value, and data_type are required" 
+      return res.status(400).json({
+        message: "Key, category, value, and data_type are required",
       });
     }
 
     // Validate data type
-    if (!['string', 'number', 'boolean', 'json'].includes(data_type)) {
+    if (!["string", "number", "boolean", "json"].includes(data_type)) {
       return res.status(400).json({ message: "Invalid data type" });
     }
 
     // Validate JSON if data_type is json
-    if (data_type === 'json') {
+    if (data_type === "json") {
       try {
         JSON.parse(value);
       } catch {
@@ -202,28 +225,44 @@ router.post("/", auth, async (req, res) => {
     }
 
     // Check if key already exists
-    const existing = await db.query("SELECT id FROM master_data WHERE key = ?", [key]);
+    const existing = await db.query(
+      "SELECT id FROM master_data WHERE key = ?",
+      [key]
+    );
     if (existing.length > 0) {
       return res.status(400).json({ message: "Key already exists" });
     }
 
     // Insert new master data
-    const result = await db.query(`
+    const result = await db.query(
+      `
       INSERT INTO master_data (key, category, value, data_type, status, description, created_by)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `, [key, category, value, data_type, status, description, req.user.id]);
+    `,
+      [key, category, value, data_type, status, description, req.user.id]
+    );
 
     // Log audit entry
-    await db.query(`
+    await db.query(
+      `
       INSERT INTO audit_logs (user_id, action, table_name, record_id, new_values)
       VALUES (?, ?, ?, ?, ?)
-    `, [
-      req.user.id,
-      'CREATE',
-      'master_data',
-      result.insertId,
-      JSON.stringify({ key, category, value, data_type, status, description })
-    ]);
+    `,
+      [
+        req.user.id,
+        "CREATE",
+        "master_data",
+        result.insertId,
+        JSON.stringify({
+          key,
+          category,
+          value,
+          data_type,
+          status,
+          description,
+        }),
+      ]
+    );
 
     res.status(201).json({
       message: "Master data created successfully",
@@ -236,24 +275,29 @@ router.post("/", auth, async (req, res) => {
 });
 
 // Update master data
-router.put("/:id", auth, async (req, res) => {
+router.put("/:id", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { category, value, data_type, status, description } = req.body;
 
     // Get existing data for audit log
-    const existing = await db.query("SELECT * FROM master_data WHERE id = ?", [id]);
+    const existing = await db.query("SELECT * FROM master_data WHERE id = ?", [
+      id,
+    ]);
     if (existing.length === 0) {
       return res.status(404).json({ message: "Master data not found" });
     }
 
     // Validate data type
-    if (data_type && !['string', 'number', 'boolean', 'json'].includes(data_type)) {
+    if (
+      data_type &&
+      !["string", "number", "boolean", "json"].includes(data_type)
+    ) {
       return res.status(400).json({ message: "Invalid data type" });
     }
 
     // Validate JSON if data_type is json
-    if (data_type === 'json' && value) {
+    if (data_type === "json" && value) {
       try {
         JSON.parse(value);
       } catch {
@@ -262,7 +306,8 @@ router.put("/:id", auth, async (req, res) => {
     }
 
     // Update master data
-    const result = await db.query(`
+    const result = await db.query(
+      `
       UPDATE master_data 
       SET category = COALESCE(?, category),
           value = COALESCE(?, value),
@@ -271,20 +316,25 @@ router.put("/:id", auth, async (req, res) => {
           description = COALESCE(?, description),
           updated_at = NOW()
       WHERE id = ?
-    `, [category, value, data_type, status, description, id]);
+    `,
+      [category, value, data_type, status, description, id]
+    );
 
     // Log audit entry
-    await db.query(`
+    await db.query(
+      `
       INSERT INTO audit_logs (user_id, action, table_name, record_id, old_values, new_values)
       VALUES (?, ?, ?, ?, ?, ?)
-    `, [
-      req.user.id,
-      'UPDATE',
-      'master_data',
-      id,
-      JSON.stringify(existing[0]),
-      JSON.stringify({ category, value, data_type, status, description })
-    ]);
+    `,
+      [
+        req.user.id,
+        "UPDATE",
+        "master_data",
+        id,
+        JSON.stringify(existing[0]),
+        JSON.stringify({ category, value, data_type, status, description }),
+      ]
+    );
 
     res.json({
       message: "Master data updated successfully",
@@ -297,12 +347,14 @@ router.put("/:id", auth, async (req, res) => {
 });
 
 // Delete master data
-router.delete("/:id", auth, async (req, res) => {
+router.delete("/:id", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
     // Get existing data for audit log
-    const existing = await db.query("SELECT * FROM master_data WHERE id = ?", [id]);
+    const existing = await db.query("SELECT * FROM master_data WHERE id = ?", [
+      id,
+    ]);
     if (existing.length === 0) {
       return res.status(404).json({ message: "Master data not found" });
     }
@@ -311,16 +363,13 @@ router.delete("/:id", auth, async (req, res) => {
     const result = await db.query("DELETE FROM master_data WHERE id = ?", [id]);
 
     // Log audit entry
-    await db.query(`
+    await db.query(
+      `
       INSERT INTO audit_logs (user_id, action, table_name, record_id, old_values)
       VALUES (?, ?, ?, ?, ?)
-    `, [
-      req.user.id,
-      'DELETE',
-      'master_data',
-      id,
-      JSON.stringify(existing[0])
-    ]);
+    `,
+      [req.user.id, "DELETE", "master_data", id, JSON.stringify(existing[0])]
+    );
 
     res.json({
       message: "Master data deleted successfully",
@@ -333,7 +382,7 @@ router.delete("/:id", auth, async (req, res) => {
 });
 
 // Validate JSON value
-router.post("/validate-json", auth, async (req, res) => {
+router.post("/validate-json", authenticateToken, async (req, res) => {
   try {
     const { value } = req.body;
 
@@ -350,15 +399,22 @@ router.post("/validate-json", auth, async (req, res) => {
 });
 
 // Export master data
-router.get("/export", auth, async (req, res) => {
+router.get("/export", authenticateToken, async (req, res) => {
   try {
-    const { search = "", category = "", status = "", data_type = "" } = req.query;
+    const {
+      search = "",
+      category = "",
+      status = "",
+      data_type = "",
+    } = req.query;
 
     let whereConditions = [];
     let params = [];
 
     if (search) {
-      whereConditions.push("(key LIKE ? OR value LIKE ? OR description LIKE ?)");
+      whereConditions.push(
+        "(key LIKE ? OR value LIKE ? OR description LIKE ?)"
+      );
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
@@ -377,40 +433,56 @@ router.get("/export", auth, async (req, res) => {
       params.push(data_type);
     }
 
-    const whereClause = whereConditions.length > 0 
-      ? `WHERE ${whereConditions.join(" AND ")}` 
-      : "";
+    const whereClause =
+      whereConditions.length > 0
+        ? `WHERE ${whereConditions.join(" AND ")}`
+        : "";
 
-    const masterData = await db.query(`
+    const masterData = await db.query(
+      `
       SELECT key, category, value, data_type, status, description, 
              DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') as created_at,
              DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') as updated_at
       FROM master_data ${whereClause}
       ORDER BY category, key
-    `, params);
+    `,
+      params
+    );
 
     // Create CSV content
-    const headers = ['Key', 'Category', 'Value', 'Data Type', 'Status', 'Description', 'Created At', 'Updated At'];
-    const csvRows = [headers.join(',')];
+    const headers = [
+      "Key",
+      "Category",
+      "Value",
+      "Data Type",
+      "Status",
+      "Description",
+      "Created At",
+      "Updated At",
+    ];
+    const csvRows = [headers.join(",")];
 
-    masterData.forEach(row => {
+    masterData.forEach((row) => {
       const values = [
         `"${row.key}"`,
         `"${row.category}"`,
         `"${String(row.value).replace(/"/g, '""')}"`,
         `"${row.data_type}"`,
         `"${row.status}"`,
-        `"${row.description || ''}"`,
+        `"${row.description || ""}"`,
         `"${row.created_at}"`,
-        `"${row.updated_at}"`
+        `"${row.updated_at}"`,
       ];
-      csvRows.push(values.join(','));
+      csvRows.push(values.join(","));
     });
 
-    const csvContent = csvRows.join('\n');
+    const csvContent = csvRows.join("\n");
 
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="master-data-export.csv"');
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="master-data-export.csv"'
+    );
     res.send(csvContent);
   } catch (error) {
     console.error("Error exporting master data:", error);
@@ -418,13 +490,271 @@ router.get("/export", auth, async (req, res) => {
   }
 });
 
+// Get provinces
+router.get("/provinces", authenticateToken, async (req, res) => {
+  try {
+    const provinces = await db.query(`
+      SELECT id, name, code 
+      FROM provinces 
+      ORDER BY name
+    `);
+
+    res.json({
+      success: true,
+      data: provinces,
+    });
+  } catch (error) {
+    console.error("Error fetching provinces:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch provinces",
+    });
+  }
+});
+
+// Get districts by province
+router.get("/districts", authenticateToken, async (req, res) => {
+  try {
+    const { province_id, province } = req.query;
+    let query = "SELECT id, name, province_id FROM districts";
+    let params = [];
+
+    if (province_id) {
+      query += " WHERE province_id = ?";
+      params.push(province_id);
+    } else if (province) {
+      query += " WHERE province_id = (SELECT id FROM provinces WHERE name = ?)";
+      params.push(province);
+    }
+
+    query += " ORDER BY name";
+
+    const districts = await db.query(query, params);
+
+    res.json({
+      success: true,
+      data: districts,
+    });
+  } catch (error) {
+    console.error("Error fetching districts:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch districts",
+    });
+  }
+});
+
+// Get subdistricts by district
+router.get("/subdistricts", authenticateToken, async (req, res) => {
+  try {
+    const { district_id, province, district } = req.query;
+    let query = "SELECT id, name, district_id FROM subdistricts";
+    let params = [];
+
+    if (district_id) {
+      query += " WHERE district_id = ?";
+      params.push(district_id);
+    } else if (province && district) {
+      query += ` WHERE district_id = (
+        SELECT d.id FROM districts d 
+        JOIN provinces p ON d.province_id = p.id 
+        WHERE p.name = ? AND d.name = ?
+      )`;
+      params.push(province, district);
+    }
+
+    query += " ORDER BY name";
+
+    const subdistricts = await db.query(query, params);
+
+    res.json({
+      success: true,
+      data: subdistricts,
+    });
+  } catch (error) {
+    console.error("Error fetching subdistricts:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch subdistricts",
+    });
+  }
+});
+
+// Get survey types
+router.get("/survey-types", authenticateToken, async (req, res) => {
+  try {
+    const surveyTypes = await db.query(`
+      SELECT type_id, type_name 
+      FROM survey_target_types 
+      ORDER BY type_name
+    `);
+
+    res.json({
+      success: true,
+      data: surveyTypes,
+    });
+  } catch (error) {
+    console.error("Error fetching survey types:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch survey types",
+    });
+  }
+});
+
+// Get temple types
+router.get("/temple-types", authenticateToken, async (req, res) => {
+  try {
+    const templeTypes = await db.query(`
+      SELECT id, name 
+      FROM master_temple_types 
+      ORDER BY name
+    `);
+
+    res.json({
+      success: true,
+      data: templeTypes,
+    });
+  } catch (error) {
+    console.error("Error fetching temple types:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch temple types",
+    });
+  }
+});
+
+// Get denominations/sects
+router.get("/sects", authenticateToken, async (req, res) => {
+  try {
+    const sects = await db.query(`
+      SELECT id, name 
+      FROM master_denominations 
+      ORDER BY name
+    `);
+
+    res.json({
+      success: true,
+      data: sects,
+    });
+  } catch (error) {
+    console.error("Error fetching sects:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch sects",
+    });
+  }
+});
+
+// Get surveyors (users with Surveyor role)
+router.get("/surveyors", authenticateToken, async (req, res) => {
+  try {
+    const surveyors = await db.query(`
+      SELECT user_id as id, CONCAT(first_name, ' ', last_name) as name, email
+      FROM users 
+      WHERE role = 'Surveyor' AND is_active = 1
+      ORDER BY first_name, last_name
+    `);
+
+    res.json({
+      success: true,
+      data: surveyors,
+    });
+  } catch (error) {
+    console.error("Error fetching surveyors:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch surveyors",
+    });
+  }
+});
+
+// Get users with surveyor role (for frontend compatibility)
+router.get("/users", authenticateToken, async (req, res) => {
+  try {
+    const { role, page = 1, limit = 50 } = req.query;
+    const offset = (page - 1) * limit;
+
+    let query = `
+      SELECT user_id as id, first_name, last_name, email, role, is_active,
+             CONCAT(first_name, ' ', last_name) as name,
+             created_at, updated_at
+      FROM users 
+    `;
+    let params = [];
+
+    if (role) {
+      query += " WHERE role = ?";
+      params.push(role);
+    }
+
+    query += " ORDER BY first_name, last_name LIMIT ? OFFSET ?";
+    params.push(parseInt(limit), parseInt(offset));
+
+    const users = await db.query(query, params);
+
+    res.json({
+      success: true,
+      data: users,
+    });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch users",
+    });
+  }
+});
+
+// Get subdistricts by district (alternative endpoint)
+router.get("/sub-districts", authenticateToken, async (req, res) => {
+  try {
+    const { district_id, province, district } = req.query;
+    let query = "SELECT id, name, district_id FROM subdistricts";
+    let params = [];
+
+    if (district_id) {
+      query += " WHERE district_id = ?";
+      params.push(district_id);
+    } else if (province && district) {
+      query += ` WHERE district_id = (
+        SELECT d.id FROM districts d 
+        JOIN provinces p ON d.province_id = p.id 
+        WHERE p.name = ? AND d.name = ?
+      )`;
+      params.push(province, district);
+    }
+
+    query += " ORDER BY name";
+
+    const subdistricts = await db.query(query, params);
+
+    res.json({
+      success: true,
+      data: subdistricts,
+    });
+  } catch (error) {
+    console.error("Error fetching sub-districts:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch sub-districts",
+    });
+  }
+});
+
 // Bulk operations
-router.patch("/bulk/status", auth, async (req, res) => {
+router.patch("/bulk/status", authenticateToken, async (req, res) => {
   try {
     const { masterDataIds, status } = req.body;
-    
-    if (!masterDataIds || !Array.isArray(masterDataIds) || masterDataIds.length === 0) {
-      return res.status(400).json({ message: "Master data IDs array is required" });
+
+    if (
+      !masterDataIds ||
+      !Array.isArray(masterDataIds) ||
+      masterDataIds.length === 0
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Master data IDs array is required" });
     }
 
     if (!["active", "inactive"].includes(status)) {
@@ -462,12 +792,18 @@ router.patch("/bulk/status", auth, async (req, res) => {
   }
 });
 
-router.delete("/bulk", auth, async (req, res) => {
+router.delete("/bulk", authenticateToken, async (req, res) => {
   try {
     const { masterDataIds } = req.body;
-    
-    if (!masterDataIds || !Array.isArray(masterDataIds) || masterDataIds.length === 0) {
-      return res.status(400).json({ message: "Master data IDs array is required" });
+
+    if (
+      !masterDataIds ||
+      !Array.isArray(masterDataIds) ||
+      masterDataIds.length === 0
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Master data IDs array is required" });
     }
 
     // Get master data for audit log before deletion
@@ -477,10 +813,9 @@ router.delete("/bulk", auth, async (req, res) => {
     );
 
     // Delete master data
-    const result = await db.query(
-      "DELETE FROM master_data WHERE id IN (?)",
-      [masterDataIds]
-    );
+    const result = await db.query("DELETE FROM master_data WHERE id IN (?)", [
+      masterDataIds,
+    ]);
 
     // Log audit entries
     for (const item of masterDataItems) {

@@ -4,14 +4,16 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h2 class="mb-1">Master Data Management</h2>
-        <p class="text-muted mb-0">Manage system master data and configurations</p>
+        <p class="text-muted mb-0">
+          Manage system master data and configurations
+        </p>
       </div>
       <div class="d-flex gap-2">
         <button class="btn btn-outline-primary" @click="refreshData">
           <i class="fas fa-sync-alt me-2"></i>Refresh
         </button>
-        <button 
-          class="btn btn-primary" 
+        <button
+          class="btn btn-primary"
           @click="showAddModal = true"
           v-if="hasPermission('master_data_create')"
         >
@@ -66,7 +68,9 @@
                 </div>
               </div>
               <div class="flex-grow-1 ms-3">
-                <div class="fw-bold h4 mb-0">{{ statistics.inactive || 0 }}</div>
+                <div class="fw-bold h4 mb-0">
+                  {{ statistics.inactive || 0 }}
+                </div>
                 <div class="text-muted">Inactive</div>
               </div>
             </div>
@@ -83,7 +87,9 @@
                 </div>
               </div>
               <div class="flex-grow-1 ms-3">
-                <div class="fw-bold h4 mb-0">{{ statistics.categories || 0 }}</div>
+                <div class="fw-bold h4 mb-0">
+                  {{ statistics.categories || 0 }}
+                </div>
                 <div class="text-muted">Categories</div>
               </div>
             </div>
@@ -113,16 +119,28 @@
           </div>
           <div class="col-md-2">
             <label class="form-label">Category</label>
-            <select class="form-select" v-model="selectedCategory" @change="applyFilters">
+            <select
+              class="form-select"
+              v-model="selectedCategory"
+              @change="applyFilters"
+            >
               <option value="">All Categories</option>
-              <option v-for="category in categories" :key="category" :value="category">
+              <option
+                v-for="category in categories"
+                :key="category"
+                :value="category"
+              >
                 {{ category }}
               </option>
             </select>
           </div>
           <div class="col-md-2">
             <label class="form-label">Status</label>
-            <select class="form-select" v-model="selectedStatus" @change="applyFilters">
+            <select
+              class="form-select"
+              v-model="selectedStatus"
+              @change="applyFilters"
+            >
               <option value="">All Status</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
@@ -130,7 +148,11 @@
           </div>
           <div class="col-md-2">
             <label class="form-label">Data Type</label>
-            <select class="form-select" v-model="selectedType" @change="applyFilters">
+            <select
+              class="form-select"
+              v-model="selectedType"
+              @change="applyFilters"
+            >
               <option value="">All Types</option>
               <option value="string">String</option>
               <option value="number">Number</option>
@@ -179,7 +201,9 @@
               :disabled="selectedItems.length === 0"
               v-if="hasPermission('master_data_update')"
             >
-              <i class="fas fa-check me-1"></i>Activate ({{ selectedItems.length }})
+              <i class="fas fa-check me-1"></i>Activate ({{
+                selectedItems.length
+              }})
             </button>
             <button
               class="btn btn-sm btn-outline-warning me-2"
@@ -187,7 +211,9 @@
               :disabled="selectedItems.length === 0"
               v-if="hasPermission('master_data_update')"
             >
-              <i class="fas fa-pause me-1"></i>Deactivate ({{ selectedItems.length }})
+              <i class="fas fa-pause me-1"></i>Deactivate ({{
+                selectedItems.length
+              }})
             </button>
             <button
               class="btn btn-sm btn-outline-danger"
@@ -195,7 +221,9 @@
               :disabled="selectedItems.length === 0"
               v-if="hasPermission('master_data_delete')"
             >
-              <i class="fas fa-trash me-1"></i>Delete ({{ selectedItems.length }})
+              <i class="fas fa-trash me-1"></i>Delete ({{
+                selectedItems.length
+              }})
             </button>
           </template>
 
@@ -243,19 +271,27 @@
                   <span class="badge bg-secondary">{{ item.category }}</span>
                 </td>
                 <td>
-                  <div class="text-truncate" style="max-width: 200px;">
+                  <div class="text-truncate" style="max-width: 200px">
                     <span v-if="item.data_type === 'boolean'">
-                      <i class="fas fa-check text-success" v-if="item.value === 'true'"></i>
+                      <i
+                        class="fas fa-check text-success"
+                        v-if="item.value === 'true'"
+                      ></i>
                       <i class="fas fa-times text-danger" v-else></i>
                     </span>
                     <span v-else-if="item.data_type === 'json'">
-                      <code class="text-info">{{ truncateJson(item.value) }}</code>
+                      <code class="text-info">{{
+                        truncateJson(item.value)
+                      }}</code>
                     </span>
                     <span v-else>{{ item.value }}</span>
                   </div>
                 </td>
                 <td>
-                  <span class="badge" :class="getTypeBadgeClass(item.data_type)">
+                  <span
+                    class="badge"
+                    :class="getTypeBadgeClass(item.data_type)"
+                  >
                     {{ item.data_type }}
                   </span>
                 </td>
@@ -264,15 +300,19 @@
                     class="badge"
                     :class="{
                       'bg-success': item.status === 'active',
-                      'bg-warning': item.status === 'inactive'
+                      'bg-warning': item.status === 'inactive',
                     }"
                   >
                     {{ item.status }}
                   </span>
                 </td>
                 <td>
-                  <div class="text-truncate" style="max-width: 150px;" :title="item.description">
-                    {{ item.description || 'No description' }}
+                  <div
+                    class="text-truncate"
+                    style="max-width: 150px"
+                    :title="item.description"
+                  >
+                    {{ item.description || "No description" }}
                   </div>
                 </td>
                 <td>
@@ -308,14 +348,23 @@
     </div>
 
     <!-- Add/Edit Modal -->
-    <div class="modal fade" id="masterDataModal" tabindex="-1" ref="masterDataModal">
+    <div
+      class="modal fade"
+      id="masterDataModal"
+      tabindex="-1"
+      ref="masterDataModal"
+    >
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">
-              {{ editingItem ? 'Edit Master Data' : 'Add Master Data' }}
+              {{ editingItem ? "Edit Master Data" : "Add Master Data" }}
             </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
           </div>
           <div class="modal-body">
             <form @submit.prevent="saveMasterData">
@@ -348,7 +397,11 @@
                 <div class="col-md-6">
                   <div class="mb-3">
                     <label class="form-label">Data Type *</label>
-                    <select class="form-select" v-model="formData.data_type" required>
+                    <select
+                      class="form-select"
+                      v-model="formData.data_type"
+                      required
+                    >
                       <option value="string">String</option>
                       <option value="number">Number</option>
                       <option value="boolean">Boolean</option>
@@ -359,7 +412,11 @@
                 <div class="col-md-6">
                   <div class="mb-3">
                     <label class="form-label">Status *</label>
-                    <select class="form-select" v-model="formData.status" required>
+                    <select
+                      class="form-select"
+                      v-model="formData.status"
+                      required
+                    >
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
                     </select>
@@ -405,11 +462,19 @@
             </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
               Cancel
             </button>
-            <button type="button" class="btn btn-primary" @click="saveMasterData">
-              {{ editingItem ? 'Update' : 'Add' }} Master Data
+            <button
+              type="button"
+              class="btn btn-primary"
+              @click="saveMasterData"
+            >
+              {{ editingItem ? "Update" : "Add" }} Master Data
             </button>
           </div>
         </div>
@@ -429,17 +494,17 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue';
-import { useAuthStore } from '@/stores/auth';
-import { useToast } from '@/composables/useToast';
-import EnhancedDataTable from '@/components/common/EnhancedDataTable.vue';
-import ConfirmationModal from '@/components/common/ConfirmationModal.vue';
-import masterDataService from '@/services/masterDataService';
-import { debounce } from 'lodash';
-import { Modal } from 'bootstrap';
+import { ref, reactive, computed, onMounted, nextTick, watch } from "vue";
+import { useAuthStore } from "@/stores/auth";
+import { useToast } from "@/composables/useToast";
+import EnhancedDataTable from "@/components/common/EnhancedDataTable.vue";
+import ConfirmationModal from "@/components/common/ConfirmationModal.vue";
+import masterDataService from "@/services/masterDataService";
+import { debounce } from "lodash";
+import { Modal } from "bootstrap";
 
 export default {
-  name: 'MasterDataListEnhanced',
+  name: "MasterDataListEnhanced",
   components: {
     EnhancedDataTable,
     ConfirmationModal,
@@ -455,10 +520,10 @@ export default {
     const currentPage = ref(1);
     const itemsPerPage = ref(10);
     const selectedItems = ref([]);
-    const searchTerm = ref('');
-    const selectedCategory = ref('');
-    const selectedStatus = ref('');
-    const selectedType = ref('');
+    const searchTerm = ref("");
+    const selectedCategory = ref("");
+    const selectedStatus = ref("");
+    const selectedType = ref("");
     const categories = ref([]);
     const statistics = ref({});
     const showAddModal = ref(false);
@@ -468,29 +533,29 @@ export default {
 
     // Form data
     const formData = reactive({
-      key: '',
-      category: '',
-      value: '',
-      data_type: 'string',
-      status: 'active',
-      description: '',
+      key: "",
+      category: "",
+      value: "",
+      data_type: "string",
+      status: "active",
+      description: "",
     });
 
     // Confirmation modal data
-    const confirmationTitle = ref('');
-    const confirmationMessage = ref('');
-    const confirmationAction = ref('');
-    const confirmationVariant = ref('danger');
+    const confirmationTitle = ref("");
+    const confirmationMessage = ref("");
+    const confirmationAction = ref("");
+    const confirmationVariant = ref("danger");
     const pendingAction = ref(null);
 
     // Table columns
     const tableColumns = [
-      { key: 'key', label: 'Key', sortable: true },
-      { key: 'category', label: 'Category', sortable: true },
-      { key: 'value', label: 'Value' },
-      { key: 'data_type', label: 'Type', sortable: true },
-      { key: 'status', label: 'Status', sortable: true },
-      { key: 'updated_at', label: 'Updated', sortable: true },
+      { key: "key", label: "Key", sortable: true },
+      { key: "category", label: "Category", sortable: true },
+      { key: "value", label: "Value" },
+      { key: "data_type", label: "Type", sortable: true },
+      { key: "status", label: "Status", sortable: true },
+      { key: "updated_at", label: "Updated", sortable: true },
     ];
 
     // Computed properties
@@ -499,11 +564,17 @@ export default {
     });
 
     const isAllSelected = computed(() => {
-      return masterData.value.length > 0 && selectedItems.value.length === masterData.value.length;
+      return (
+        masterData.value.length > 0 &&
+        selectedItems.value.length === masterData.value.length
+      );
     });
 
     const isPartiallySelected = computed(() => {
-      return selectedItems.value.length > 0 && selectedItems.value.length < masterData.value.length;
+      return (
+        selectedItems.value.length > 0 &&
+        selectedItems.value.length < masterData.value.length
+      );
     });
 
     // Methods
@@ -523,8 +594,8 @@ export default {
         masterData.value = response.data;
         totalItems.value = response.total;
       } catch (error) {
-        console.error('Error loading master data:', error);
-        showToast('Failed to load master data', 'error');
+        console.error("Error loading master data:", error);
+        showToast("Failed to load master data", "error");
       } finally {
         loading.value = false;
       }
@@ -535,7 +606,7 @@ export default {
         const response = await masterDataService.getStatistics();
         statistics.value = response;
       } catch (error) {
-        console.error('Error loading statistics:', error);
+        console.error("Error loading statistics:", error);
       }
     };
 
@@ -544,7 +615,7 @@ export default {
         const response = await masterDataService.getCategories();
         categories.value = response;
       } catch (error) {
-        console.error('Error loading categories:', error);
+        console.error("Error loading categories:", error);
       }
     };
 
@@ -564,10 +635,10 @@ export default {
     };
 
     const clearFilters = () => {
-      searchTerm.value = '';
-      selectedCategory.value = '';
-      selectedStatus.value = '';
-      selectedType.value = '';
+      searchTerm.value = "";
+      selectedCategory.value = "";
+      selectedStatus.value = "";
+      selectedType.value = "";
       currentPage.value = 1;
       loadMasterData();
     };
@@ -576,18 +647,18 @@ export default {
       if (isAllSelected.value) {
         selectedItems.value = [];
       } else {
-        selectedItems.value = masterData.value.map(item => item.id);
+        selectedItems.value = masterData.value.map((item) => item.id);
       }
     };
 
     const resetForm = () => {
       Object.assign(formData, {
-        key: '',
-        category: '',
-        value: '',
-        data_type: 'string',
-        status: 'active',
-        description: '',
+        key: "",
+        category: "",
+        value: "",
+        data_type: "string",
+        status: "active",
+        description: "",
       });
     };
 
@@ -609,28 +680,31 @@ export default {
         value: item.value,
         data_type: item.data_type,
         status: item.status,
-        description: item.description || '',
+        description: item.description || "",
       });
       showModal();
     };
 
     const saveMasterData = async () => {
       try {
-        if (formData.data_type === 'json') {
+        if (formData.data_type === "json") {
           try {
             JSON.parse(formData.value);
           } catch {
-            showToast('Invalid JSON format', 'error');
+            showToast("Invalid JSON format", "error");
             return;
           }
         }
 
         if (editingItem.value) {
-          await masterDataService.updateMasterData(editingItem.value.id, formData);
-          showToast('Master data updated successfully', 'success');
+          await masterDataService.updateMasterData(
+            editingItem.value.id,
+            formData
+          );
+          showToast("Master data updated successfully", "success");
         } else {
           await masterDataService.createMasterData(formData);
-          showToast('Master data created successfully', 'success');
+          showToast("Master data created successfully", "success");
         }
 
         hideModal();
@@ -638,81 +712,93 @@ export default {
         editingItem.value = null;
         await refreshData();
       } catch (error) {
-        console.error('Error saving master data:', error);
-        showToast(error.response?.data?.message || 'Failed to save master data', 'error');
+        console.error("Error saving master data:", error);
+        showToast(
+          error.response?.data?.message || "Failed to save master data",
+          "error"
+        );
       }
     };
 
     const deleteItem = (item) => {
-      confirmationTitle.value = 'Delete Master Data';
+      confirmationTitle.value = "Delete Master Data";
       confirmationMessage.value = `Are you sure you want to delete "${item.key}"? This action cannot be undone.`;
-      confirmationAction.value = 'Delete';
-      confirmationVariant.value = 'danger';
+      confirmationAction.value = "Delete";
+      confirmationVariant.value = "danger";
       pendingAction.value = async () => {
         try {
           await masterDataService.deleteMasterData(item.id);
-          showToast('Master data deleted successfully', 'success');
+          showToast("Master data deleted successfully", "success");
           await refreshData();
         } catch (error) {
-          console.error('Error deleting master data:', error);
-          showToast('Failed to delete master data', 'error');
+          console.error("Error deleting master data:", error);
+          showToast("Failed to delete master data", "error");
         }
       };
       confirmationModal.value.show();
     };
 
     const bulkActivate = (items, clearSelection) => {
-      confirmationTitle.value = 'Activate Master Data';
+      confirmationTitle.value = "Activate Master Data";
       confirmationMessage.value = `Are you sure you want to activate ${items.length} master data items?`;
-      confirmationAction.value = 'Activate';
-      confirmationVariant.value = 'success';
+      confirmationAction.value = "Activate";
+      confirmationVariant.value = "success";
       pendingAction.value = async () => {
         try {
-          await masterDataService.bulkUpdateStatus(items, 'active');
-          showToast(`Successfully activated ${items.length} master data items`, 'success');
+          await masterDataService.bulkUpdateStatus(items, "active");
+          showToast(
+            `Successfully activated ${items.length} master data items`,
+            "success"
+          );
           clearSelection();
           await refreshData();
         } catch (error) {
-          console.error('Error activating master data:', error);
-          showToast('Failed to activate master data', 'error');
+          console.error("Error activating master data:", error);
+          showToast("Failed to activate master data", "error");
         }
       };
       confirmationModal.value.show();
     };
 
     const bulkDeactivate = (items, clearSelection) => {
-      confirmationTitle.value = 'Deactivate Master Data';
+      confirmationTitle.value = "Deactivate Master Data";
       confirmationMessage.value = `Are you sure you want to deactivate ${items.length} master data items?`;
-      confirmationAction.value = 'Deactivate';
-      confirmationVariant.value = 'warning';
+      confirmationAction.value = "Deactivate";
+      confirmationVariant.value = "warning";
       pendingAction.value = async () => {
         try {
-          await masterDataService.bulkUpdateStatus(items, 'inactive');
-          showToast(`Successfully deactivated ${items.length} master data items`, 'success');
+          await masterDataService.bulkUpdateStatus(items, "inactive");
+          showToast(
+            `Successfully deactivated ${items.length} master data items`,
+            "success"
+          );
           clearSelection();
           await refreshData();
         } catch (error) {
-          console.error('Error deactivating master data:', error);
-          showToast('Failed to deactivate master data', 'error');
+          console.error("Error deactivating master data:", error);
+          showToast("Failed to deactivate master data", "error");
         }
       };
       confirmationModal.value.show();
     };
 
     const bulkDelete = (items, clearSelection) => {
-      confirmationTitle.value = 'Delete Master Data';
+      confirmationTitle.value = "Delete Master Data";
       confirmationMessage.value = `Are you sure you want to delete ${items.length} master data items? This action cannot be undone.`;
-      confirmationAction.value = 'Delete';
-      confirmationVariant.value = 'danger';
+      confirmationAction.value = "Delete";
+      confirmationVariant.value = "danger";
       pendingAction.value = async () => {
         try {
           await masterDataService.bulkDeleteMasterData(items);
-          showToast(`Successfully deleted ${items.length} master data items`, 'success');
+          showToast(
+            `Successfully deleted ${items.length} master data items`,
+            "success"
+          );
           clearSelection();
           await refreshData();
         } catch (error) {
-          console.error('Error deleting master data:', error);
-          showToast('Failed to delete master data', 'error');
+          console.error("Error deleting master data:", error);
+          showToast("Failed to delete master data", "error");
         }
       };
       confirmationModal.value.show();
@@ -733,46 +819,46 @@ export default {
           status: selectedStatus.value,
           data_type: selectedType.value,
         });
-        
+
         // Create download link
-        const blob = new Blob([response], { type: 'text/csv' });
+        const blob = new Blob([response], { type: "text/csv" });
         const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = url;
-        link.download = 'master-data-export.csv';
+        link.download = "master-data-export.csv";
         link.click();
         window.URL.revokeObjectURL(url);
-        
-        showToast('Master data exported successfully', 'success');
+
+        showToast("Master data exported successfully", "success");
       } catch (error) {
-        console.error('Error exporting master data:', error);
-        showToast('Failed to export master data', 'error');
+        console.error("Error exporting master data:", error);
+        showToast("Failed to export master data", "error");
       }
     };
 
     const formatDate = (dateString) => {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+      return new Date(dateString).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     };
 
     const getTypeBadgeClass = (type) => {
       const classes = {
-        string: 'bg-primary',
-        number: 'bg-success',
-        boolean: 'bg-warning',
-        json: 'bg-info',
+        string: "bg-primary",
+        number: "bg-success",
+        boolean: "bg-warning",
+        json: "bg-info",
       };
-      return classes[type] || 'bg-secondary';
+      return classes[type] || "bg-secondary";
     };
 
     const truncateJson = (jsonString, maxLength = 50) => {
       if (jsonString.length <= maxLength) return jsonString;
-      return jsonString.substring(0, maxLength) + '...';
+      return jsonString.substring(0, maxLength) + "...";
     };
 
     // Watchers
@@ -890,12 +976,12 @@ code {
   .master-data-list {
     padding: 0.5rem;
   }
-  
+
   .d-flex.gap-2 {
     flex-direction: column;
     gap: 0.5rem !important;
   }
-  
+
   .btn-group {
     flex-direction: column;
   }

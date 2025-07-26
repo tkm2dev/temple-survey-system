@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../config/database");
-const auth = require("../middleware/auth");
+const { authenticateToken } = require("../middleware/auth");
 
 // Get audit logs with pagination and filters
-router.get("/logs", auth, async (req, res) => {
+router.get("/logs", authenticateToken, async (req, res) => {
   try {
     const {
       page = 1,
@@ -36,7 +36,14 @@ router.get("/logs", auth, async (req, res) => {
         u.email LIKE ?
       )`);
       const searchPattern = `%${search}%`;
-      params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+      params.push(
+        searchPattern,
+        searchPattern,
+        searchPattern,
+        searchPattern,
+        searchPattern,
+        searchPattern
+      );
     }
 
     if (action) {
@@ -74,9 +81,10 @@ router.get("/logs", auth, async (req, res) => {
       params.push(date_to);
     }
 
-    const whereClause = whereConditions.length > 0 
-      ? `WHERE ${whereConditions.join(" AND ")}` 
-      : "";
+    const whereClause =
+      whereConditions.length > 0
+        ? `WHERE ${whereConditions.join(" AND ")}`
+        : "";
 
     // Count total records
     const countQuery = `
@@ -100,7 +108,11 @@ router.get("/logs", auth, async (req, res) => {
       ORDER BY al.${sort} ${order}
       LIMIT ? OFFSET ?
     `;
-    const auditLogs = await db.query(auditQuery, [...params, parseInt(limit), offset]);
+    const auditLogs = await db.query(auditQuery, [
+      ...params,
+      parseInt(limit),
+      offset,
+    ]);
 
     res.json({
       success: true,
@@ -117,10 +129,11 @@ router.get("/logs", auth, async (req, res) => {
 });
 
 // Get audit log by ID
-router.get("/logs/:id", auth, async (req, res) => {
+router.get("/logs/:id", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const auditLog = await db.query(`
+    const auditLog = await db.query(
+      `
       SELECT 
         al.*,
         u.name as user_name,
@@ -128,7 +141,9 @@ router.get("/logs/:id", auth, async (req, res) => {
       FROM audit_logs al
       LEFT JOIN users u ON al.user_id = u.id
       WHERE al.id = ?
-    `, [id]);
+    `,
+      [id]
+    );
 
     if (auditLog.length === 0) {
       return res.status(404).json({ message: "Audit log not found" });
@@ -142,7 +157,7 @@ router.get("/logs/:id", auth, async (req, res) => {
 });
 
 // Get audit statistics
-router.get("/statistics", auth, async (req, res) => {
+router.get("/statistics", authenticateToken, async (req, res) => {
   try {
     const statistics = await db.query(`
       SELECT 
@@ -163,7 +178,7 @@ router.get("/statistics", auth, async (req, res) => {
 });
 
 // Get available tables
-router.get("/tables", auth, async (req, res) => {
+router.get("/tables", authenticateToken, async (req, res) => {
   try {
     const tables = await db.query(`
       SELECT DISTINCT table_name 
@@ -172,7 +187,7 @@ router.get("/tables", auth, async (req, res) => {
       ORDER BY table_name
     `);
 
-    res.json(tables.map(row => row.table_name));
+    res.json(tables.map((row) => row.table_name));
   } catch (error) {
     console.error("Error fetching tables:", error);
     res.status(500).json({ message: "Failed to fetch tables" });
@@ -180,7 +195,7 @@ router.get("/tables", auth, async (req, res) => {
 });
 
 // Get available users
-router.get("/users", auth, async (req, res) => {
+router.get("/users", authenticateToken, async (req, res) => {
   try {
     const users = await db.query(`
       SELECT DISTINCT u.id, u.name, u.email
@@ -197,13 +212,14 @@ router.get("/users", auth, async (req, res) => {
 });
 
 // Get audit logs by table
-router.get("/logs/table/:tableName", auth, async (req, res) => {
+router.get("/logs/table/:tableName", authenticateToken, async (req, res) => {
   try {
     const { tableName } = req.params;
     const { page = 1, limit = 10 } = req.query;
     const offset = (page - 1) * limit;
 
-    const auditLogs = await db.query(`
+    const auditLogs = await db.query(
+      `
       SELECT 
         al.*,
         u.name as user_name,
@@ -213,7 +229,9 @@ router.get("/logs/table/:tableName", auth, async (req, res) => {
       WHERE al.table_name = ?
       ORDER BY al.created_at DESC
       LIMIT ? OFFSET ?
-    `, [tableName, parseInt(limit), offset]);
+    `,
+      [tableName, parseInt(limit), offset]
+    );
 
     const countResult = await db.query(
       "SELECT COUNT(*) as total FROM audit_logs WHERE table_name = ?",
@@ -233,13 +251,14 @@ router.get("/logs/table/:tableName", auth, async (req, res) => {
 });
 
 // Get audit logs by user
-router.get("/logs/user/:userId", auth, async (req, res) => {
+router.get("/logs/user/:userId", authenticateToken, async (req, res) => {
   try {
     const { userId } = req.params;
     const { page = 1, limit = 10 } = req.query;
     const offset = (page - 1) * limit;
 
-    const auditLogs = await db.query(`
+    const auditLogs = await db.query(
+      `
       SELECT 
         al.*,
         u.name as user_name,
@@ -249,7 +268,9 @@ router.get("/logs/user/:userId", auth, async (req, res) => {
       WHERE al.user_id = ?
       ORDER BY al.created_at DESC
       LIMIT ? OFFSET ?
-    `, [userId, parseInt(limit), offset]);
+    `,
+      [userId, parseInt(limit), offset]
+    );
 
     const countResult = await db.query(
       "SELECT COUNT(*) as total FROM audit_logs WHERE user_id = ?",
@@ -269,11 +290,15 @@ router.get("/logs/user/:userId", auth, async (req, res) => {
 });
 
 // Get audit logs by record
-router.get("/logs/record/:tableName/:recordId", auth, async (req, res) => {
-  try {
-    const { tableName, recordId } = req.params;
+router.get(
+  "/logs/record/:tableName/:recordId",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const { tableName, recordId } = req.params;
 
-    const auditLogs = await db.query(`
+      const auditLogs = await db.query(
+        `
       SELECT 
         al.*,
         u.name as user_name,
@@ -282,21 +307,25 @@ router.get("/logs/record/:tableName/:recordId", auth, async (req, res) => {
       LEFT JOIN users u ON al.user_id = u.id
       WHERE al.table_name = ? AND al.record_id = ?
       ORDER BY al.created_at DESC
-    `, [tableName, recordId]);
+    `,
+        [tableName, recordId]
+      );
 
-    res.json(auditLogs);
-  } catch (error) {
-    console.error("Error fetching audit logs by record:", error);
-    res.status(500).json({ message: "Failed to fetch audit logs" });
+      res.json(auditLogs);
+    } catch (error) {
+      console.error("Error fetching audit logs by record:", error);
+      res.status(500).json({ message: "Failed to fetch audit logs" });
+    }
   }
-});
+);
 
 // Get recent activity
-router.get("/recent", auth, async (req, res) => {
+router.get("/recent", authenticateToken, async (req, res) => {
   try {
     const { limit = 10 } = req.query;
 
-    const recentActivity = await db.query(`
+    const recentActivity = await db.query(
+      `
       SELECT 
         al.*,
         u.name as user_name,
@@ -305,7 +334,9 @@ router.get("/recent", auth, async (req, res) => {
       LEFT JOIN users u ON al.user_id = u.id
       ORDER BY al.created_at DESC
       LIMIT ?
-    `, [parseInt(limit)]);
+    `,
+      [parseInt(limit)]
+    );
 
     res.json(recentActivity);
   } catch (error) {
@@ -315,11 +346,12 @@ router.get("/recent", auth, async (req, res) => {
 });
 
 // Get activity by date range
-router.get("/activity", auth, async (req, res) => {
+router.get("/activity", authenticateToken, async (req, res) => {
   try {
     const { start_date, end_date } = req.query;
 
-    const activity = await db.query(`
+    const activity = await db.query(
+      `
       SELECT 
         DATE(created_at) as date,
         COUNT(*) as count,
@@ -328,7 +360,9 @@ router.get("/activity", auth, async (req, res) => {
       WHERE DATE(created_at) BETWEEN ? AND ?
       GROUP BY DATE(created_at), action
       ORDER BY date DESC, action
-    `, [start_date, end_date]);
+    `,
+      [start_date, end_date]
+    );
 
     res.json(activity);
   } catch (error) {
@@ -338,11 +372,12 @@ router.get("/activity", auth, async (req, res) => {
 });
 
 // Get user activity summary
-router.get("/users/:userId/activity", auth, async (req, res) => {
+router.get("/users/:userId/activity", authenticateToken, async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const activitySummary = await db.query(`
+    const activitySummary = await db.query(
+      `
       SELECT 
         action,
         table_name,
@@ -352,7 +387,9 @@ router.get("/users/:userId/activity", auth, async (req, res) => {
       WHERE user_id = ?
       GROUP BY action, table_name
       ORDER BY last_activity DESC
-    `, [userId]);
+    `,
+      [userId]
+    );
 
     res.json(activitySummary);
   } catch (error) {
@@ -362,12 +399,13 @@ router.get("/users/:userId/activity", auth, async (req, res) => {
 });
 
 // Search audit logs
-router.get("/search", auth, async (req, res) => {
+router.get("/search", authenticateToken, async (req, res) => {
   try {
     const { q, page = 1, limit = 10 } = req.query;
     const offset = (page - 1) * limit;
 
-    const searchResults = await db.query(`
+    const searchResults = await db.query(
+      `
       SELECT 
         al.*,
         u.name as user_name,
@@ -383,12 +421,21 @@ router.get("/search", auth, async (req, res) => {
         u.email LIKE ?
       ORDER BY al.created_at DESC
       LIMIT ? OFFSET ?
-    `, [
-      `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`,
-      parseInt(limit), offset
-    ]);
+    `,
+      [
+        `%${q}%`,
+        `%${q}%`,
+        `%${q}%`,
+        `%${q}%`,
+        `%${q}%`,
+        `%${q}%`,
+        parseInt(limit),
+        offset,
+      ]
+    );
 
-    const countResult = await db.query(`
+    const countResult = await db.query(
+      `
       SELECT COUNT(*) as total
       FROM audit_logs al
       LEFT JOIN users u ON al.user_id = u.id
@@ -399,7 +446,9 @@ router.get("/search", auth, async (req, res) => {
         al.new_values LIKE ? OR
         u.name LIKE ? OR
         u.email LIKE ?
-    `, [`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`]);
+    `,
+      [`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`]
+    );
 
     res.json({
       data: searchResults,
@@ -414,22 +463,25 @@ router.get("/search", auth, async (req, res) => {
 });
 
 // Create audit log (for manual logging)
-router.post("/logs", auth, async (req, res) => {
+router.post("/logs", authenticateToken, async (req, res) => {
   try {
     const { action, table_name, record_id, old_values, new_values } = req.body;
 
-    const result = await db.query(`
+    const result = await db.query(
+      `
       INSERT INTO audit_logs (user_id, action, table_name, record_id, old_values, new_values, ip_address)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `, [
-      req.user.id,
-      action,
-      table_name,
-      record_id,
-      old_values ? JSON.stringify(old_values) : null,
-      new_values ? JSON.stringify(new_values) : null,
-      req.ip
-    ]);
+    `,
+      [
+        req.user.id,
+        action,
+        table_name,
+        record_id,
+        old_values ? JSON.stringify(old_values) : null,
+        new_values ? JSON.stringify(new_values) : null,
+        req.ip,
+      ]
+    );
 
     res.status(201).json({
       message: "Audit log created successfully",
@@ -442,7 +494,7 @@ router.post("/logs", auth, async (req, res) => {
 });
 
 // Export audit logs
-router.get("/export", auth, async (req, res) => {
+router.get("/export", authenticateToken, async (req, res) => {
   try {
     const {
       search = "",
@@ -492,11 +544,13 @@ router.get("/export", auth, async (req, res) => {
       params.push(date_to);
     }
 
-    const whereClause = whereConditions.length > 0 
-      ? `WHERE ${whereConditions.join(" AND ")}` 
-      : "";
+    const whereClause =
+      whereConditions.length > 0
+        ? `WHERE ${whereConditions.join(" AND ")}`
+        : "";
 
-    const auditLogs = await db.query(`
+    const auditLogs = await db.query(
+      `
       SELECT 
         al.id,
         DATE_FORMAT(al.created_at, '%Y-%m-%d %H:%i:%s') as timestamp,
@@ -512,32 +566,48 @@ router.get("/export", auth, async (req, res) => {
       LEFT JOIN users u ON al.user_id = u.id
       ${whereClause}
       ORDER BY al.created_at DESC
-    `, params);
+    `,
+      params
+    );
 
     // Create CSV content
-    const headers = ['ID', 'Timestamp', 'User Name', 'User Email', 'Action', 'Table', 'Record ID', 'IP Address', 'Old Values', 'New Values'];
-    const csvRows = [headers.join(',')];
+    const headers = [
+      "ID",
+      "Timestamp",
+      "User Name",
+      "User Email",
+      "Action",
+      "Table",
+      "Record ID",
+      "IP Address",
+      "Old Values",
+      "New Values",
+    ];
+    const csvRows = [headers.join(",")];
 
-    auditLogs.forEach(row => {
+    auditLogs.forEach((row) => {
       const values = [
         row.id,
         `"${row.timestamp}"`,
-        `"${row.user_name || ''}"`,
-        `"${row.user_email || ''}"`,
+        `"${row.user_name || ""}"`,
+        `"${row.user_email || ""}"`,
         `"${row.action}"`,
         `"${row.table_name}"`,
-        `"${row.record_id || ''}"`,
-        `"${row.ip_address || ''}"`,
-        `"${row.old_values ? String(row.old_values).replace(/"/g, '""') : ''}"`,
-        `"${row.new_values ? String(row.new_values).replace(/"/g, '""') : ''}"`
+        `"${row.record_id || ""}"`,
+        `"${row.ip_address || ""}"`,
+        `"${row.old_values ? String(row.old_values).replace(/"/g, '""') : ""}"`,
+        `"${row.new_values ? String(row.new_values).replace(/"/g, '""') : ""}"`,
       ];
-      csvRows.push(values.join(','));
+      csvRows.push(values.join(","));
     });
 
-    const csvContent = csvRows.join('\n');
+    const csvContent = csvRows.join("\n");
 
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="audit-logs-export.csv"');
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="audit-logs-export.csv"'
+    );
     res.send(csvContent);
   } catch (error) {
     console.error("Error exporting audit logs:", error);

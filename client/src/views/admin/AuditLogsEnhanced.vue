@@ -109,7 +109,11 @@
           </div>
           <div class="col-md-2">
             <label class="form-label">Action</label>
-            <select class="form-select" v-model="selectedAction" @change="applyFilters">
+            <select
+              class="form-select"
+              v-model="selectedAction"
+              @change="applyFilters"
+            >
               <option value="">All Actions</option>
               <option value="CREATE">Create</option>
               <option value="UPDATE">Update</option>
@@ -122,7 +126,11 @@
           </div>
           <div class="col-md-2">
             <label class="form-label">Table</label>
-            <select class="form-select" v-model="selectedTable" @change="applyFilters">
+            <select
+              class="form-select"
+              v-model="selectedTable"
+              @change="applyFilters"
+            >
               <option value="">All Tables</option>
               <option v-for="table in tables" :key="table" :value="table">
                 {{ formatTableName(table) }}
@@ -131,7 +139,11 @@
           </div>
           <div class="col-md-2">
             <label class="form-label">User</label>
-            <select class="form-select" v-model="selectedUser" @change="applyFilters">
+            <select
+              class="form-select"
+              v-model="selectedUser"
+              @change="applyFilters"
+            >
               <option value="">All Users</option>
               <option v-for="user in users" :key="user.id" :value="user.id">
                 {{ user.name }}
@@ -158,15 +170,21 @@
         </div>
         <div class="row mt-3">
           <div class="col-md-12">
-            <button class="btn btn-outline-secondary me-2" @click="clearFilters">
+            <button
+              class="btn btn-outline-secondary me-2"
+              @click="clearFilters"
+            >
               <i class="fas fa-times me-1"></i>Clear Filters
             </button>
-            <button class="btn btn-outline-info" @click="showAdvancedFilters = !showAdvancedFilters">
+            <button
+              class="btn btn-outline-info"
+              @click="showAdvancedFilters = !showAdvancedFilters"
+            >
               <i class="fas fa-sliders-h me-1"></i>Advanced Filters
             </button>
           </div>
         </div>
-        
+
         <!-- Advanced Filters -->
         <div v-if="showAdvancedFilters" class="row mt-3 pt-3 border-top">
           <div class="col-md-3">
@@ -191,7 +209,11 @@
           </div>
           <div class="col-md-3">
             <label class="form-label">Time Range</label>
-            <select class="form-select" v-model="selectedTimeRange" @change="applyTimeRange">
+            <select
+              class="form-select"
+              v-model="selectedTimeRange"
+              @change="applyTimeRange"
+            >
               <option value="">All Time</option>
               <option value="today">Today</option>
               <option value="yesterday">Yesterday</option>
@@ -270,12 +292,18 @@
                   />
                 </td>
                 <td>
-                  <div class="fw-medium">{{ formatDateTime(log.created_at) }}</div>
-                  <small class="text-muted">{{ formatRelativeTime(log.created_at) }}</small>
+                  <div class="fw-medium">
+                    {{ formatDateTime(log.created_at) }}
+                  </div>
+                  <small class="text-muted">{{
+                    formatRelativeTime(log.created_at)
+                  }}</small>
                 </td>
                 <td>
                   <div class="d-flex align-items-center">
-                    <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                    <div
+                      class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                    >
                       {{ getInitials(log.user_name) }}
                     </div>
                     <div>
@@ -285,10 +313,7 @@
                   </div>
                 </td>
                 <td>
-                  <span 
-                    class="badge" 
-                    :class="getActionBadgeClass(log.action)"
-                  >
+                  <span class="badge" :class="getActionBadgeClass(log.action)">
                     <i :class="getActionIcon(log.action)" class="me-1"></i>
                     {{ log.action }}
                   </span>
@@ -299,7 +324,7 @@
                   </span>
                 </td>
                 <td>
-                  <code class="text-info">{{ log.record_id || 'N/A' }}</code>
+                  <code class="text-info">{{ log.record_id || "N/A" }}</code>
                 </td>
                 <td>
                   <div class="changes-summary">
@@ -316,7 +341,7 @@
                   </div>
                 </td>
                 <td>
-                  <code class="text-muted">{{ log.ip_address || 'N/A' }}</code>
+                  <code class="text-muted">{{ log.ip_address || "N/A" }}</code>
                 </td>
                 <td>
                   <button
@@ -335,7 +360,12 @@
     </div>
 
     <!-- Log Details Modal -->
-    <div class="modal fade" id="logDetailsModal" tabindex="-1" ref="logDetailsModal">
+    <div
+      class="modal fade"
+      id="logDetailsModal"
+      tabindex="-1"
+      ref="logDetailsModal"
+    >
       <div class="modal-dialog modal-xl">
         <div class="modal-content">
           <div class="modal-header">
@@ -343,7 +373,11 @@
               <i class="fas fa-info-circle me-2"></i>
               Audit Log Details
             </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
           </div>
           <div class="modal-body" v-if="selectedLog">
             <div class="row">
@@ -351,12 +385,15 @@
                 <div class="card border-0 bg-light">
                   <div class="card-body">
                     <h6 class="card-title">
-                      <i class="fas fa-info text-primary me-2"></i>Basic Information
+                      <i class="fas fa-info text-primary me-2"></i>Basic
+                      Information
                     </h6>
                     <table class="table table-sm table-borderless">
                       <tr>
                         <td class="fw-medium">Log ID:</td>
-                        <td><code>{{ selectedLog.id }}</code></td>
+                        <td>
+                          <code>{{ selectedLog.id }}</code>
+                        </td>
                       </tr>
                       <tr>
                         <td class="fw-medium">Timestamp:</td>
@@ -364,27 +401,40 @@
                       </tr>
                       <tr>
                         <td class="fw-medium">User:</td>
-                        <td>{{ selectedLog.user_name }} ({{ selectedLog.user_email }})</td>
+                        <td>
+                          {{ selectedLog.user_name }} ({{
+                            selectedLog.user_email
+                          }})
+                        </td>
                       </tr>
                       <tr>
                         <td class="fw-medium">Action:</td>
                         <td>
-                          <span class="badge" :class="getActionBadgeClass(selectedLog.action)">
+                          <span
+                            class="badge"
+                            :class="getActionBadgeClass(selectedLog.action)"
+                          >
                             {{ selectedLog.action }}
                           </span>
                         </td>
                       </tr>
                       <tr>
                         <td class="fw-medium">Table:</td>
-                        <td><code>{{ selectedLog.table_name }}</code></td>
+                        <td>
+                          <code>{{ selectedLog.table_name }}</code>
+                        </td>
                       </tr>
                       <tr>
                         <td class="fw-medium">Record ID:</td>
-                        <td><code>{{ selectedLog.record_id || 'N/A' }}</code></td>
+                        <td>
+                          <code>{{ selectedLog.record_id || "N/A" }}</code>
+                        </td>
                       </tr>
                       <tr>
                         <td class="fw-medium">IP Address:</td>
-                        <td><code>{{ selectedLog.ip_address || 'N/A' }}</code></td>
+                        <td>
+                          <code>{{ selectedLog.ip_address || "N/A" }}</code>
+                        </td>
                       </tr>
                     </table>
                   </div>
@@ -394,7 +444,8 @@
                 <div class="card border-0 bg-light">
                   <div class="card-body">
                     <h6 class="card-title">
-                      <i class="fas fa-exchange-alt text-warning me-2"></i>Changes Summary
+                      <i class="fas fa-exchange-alt text-warning me-2"></i
+                      >Changes Summary
                     </h6>
                     <div v-if="!hasChanges(selectedLog)" class="text-muted">
                       No changes recorded for this action.
@@ -404,13 +455,17 @@
                         <h6 class="text-danger">
                           <i class="fas fa-minus-circle me-1"></i>Old Values
                         </h6>
-                        <pre class="bg-danger bg-opacity-10 p-2 rounded"><code>{{ formatJson(selectedLog.old_values) }}</code></pre>
+                        <pre
+                          class="bg-danger bg-opacity-10 p-2 rounded"
+                        ><code>{{ formatJson(selectedLog.old_values) }}</code></pre>
                       </div>
                       <div v-if="selectedLog.new_values">
                         <h6 class="text-success">
                           <i class="fas fa-plus-circle me-1"></i>New Values
                         </h6>
-                        <pre class="bg-success bg-opacity-10 p-2 rounded"><code>{{ formatJson(selectedLog.new_values) }}</code></pre>
+                        <pre
+                          class="bg-success bg-opacity-10 p-2 rounded"
+                        ><code>{{ formatJson(selectedLog.new_values) }}</code></pre>
                       </div>
                     </div>
                   </div>
@@ -431,7 +486,11 @@
               <i class="fas fa-exchange-alt me-2"></i>
               Changes Details
             </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
           </div>
           <div class="modal-body" v-if="selectedLog">
             <div class="row">
@@ -460,16 +519,16 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue';
-import { useAuthStore } from '@/stores/auth';
-import { useToast } from '@/composables/useToast';
-import EnhancedDataTable from '@/components/common/EnhancedDataTable.vue';
-import auditService from '@/services/auditService';
-import { debounce } from 'lodash';
-import { Modal } from 'bootstrap';
+import { ref, reactive, computed, onMounted, nextTick, watch } from "vue";
+import { useAuthStore } from "@/stores/auth";
+import { useToast } from "@/composables/useToast";
+import EnhancedDataTable from "@/components/common/EnhancedDataTable.vue";
+import auditService from "@/services/auditService";
+import { debounce } from "lodash";
+import { Modal } from "bootstrap";
 
 export default {
-  name: 'AuditLogsEnhanced',
+  name: "AuditLogsEnhanced",
   components: {
     EnhancedDataTable,
   },
@@ -491,16 +550,16 @@ export default {
     const showAdvancedFilters = ref(false);
 
     // Filter states
-    const searchTerm = ref('');
-    const selectedAction = ref('');
-    const selectedTable = ref('');
-    const selectedUser = ref('');
-    const selectedIp = ref('');
-    const selectedRecordId = ref('');
-    const selectedTimeRange = ref('');
-    const dateFrom = ref('');
-    const dateTo = ref('');
-    const sortBy = ref('created_at');
+    const searchTerm = ref("");
+    const selectedAction = ref("");
+    const selectedTable = ref("");
+    const selectedUser = ref("");
+    const selectedIp = ref("");
+    const selectedRecordId = ref("");
+    const selectedTimeRange = ref("");
+    const dateFrom = ref("");
+    const dateTo = ref("");
+    const sortBy = ref("created_at");
 
     // Modal refs
     const logDetailsModal = ref(null);
@@ -508,12 +567,12 @@ export default {
 
     // Table columns
     const tableColumns = [
-      { key: 'created_at', label: 'Timestamp', sortable: true },
-      { key: 'user_name', label: 'User', sortable: true },
-      { key: 'action', label: 'Action', sortable: true },
-      { key: 'table_name', label: 'Table', sortable: true },
-      { key: 'record_id', label: 'Record ID' },
-      { key: 'ip_address', label: 'IP Address' },
+      { key: "created_at", label: "Timestamp", sortable: true },
+      { key: "user_name", label: "User", sortable: true },
+      { key: "action", label: "Action", sortable: true },
+      { key: "table_name", label: "Table", sortable: true },
+      { key: "record_id", label: "Record ID" },
+      { key: "ip_address", label: "IP Address" },
     ];
 
     // Computed properties
@@ -522,11 +581,17 @@ export default {
     });
 
     const isAllSelected = computed(() => {
-      return auditLogs.value.length > 0 && selectedItems.value.length === auditLogs.value.length;
+      return (
+        auditLogs.value.length > 0 &&
+        selectedItems.value.length === auditLogs.value.length
+      );
     });
 
     const isPartiallySelected = computed(() => {
-      return selectedItems.value.length > 0 && selectedItems.value.length < auditLogs.value.length;
+      return (
+        selectedItems.value.length > 0 &&
+        selectedItems.value.length < auditLogs.value.length
+      );
     });
 
     // Methods
@@ -551,8 +616,8 @@ export default {
         auditLogs.value = response.data;
         totalItems.value = response.total;
       } catch (error) {
-        console.error('Error loading audit logs:', error);
-        showToast('Failed to load audit logs', 'error');
+        console.error("Error loading audit logs:", error);
+        showToast("Failed to load audit logs", "error");
       } finally {
         loading.value = false;
       }
@@ -563,7 +628,7 @@ export default {
         const response = await auditService.getStatistics();
         statistics.value = response;
       } catch (error) {
-        console.error('Error loading statistics:', error);
+        console.error("Error loading statistics:", error);
       }
     };
 
@@ -572,7 +637,7 @@ export default {
         const response = await auditService.getTables();
         tables.value = response;
       } catch (error) {
-        console.error('Error loading tables:', error);
+        console.error("Error loading tables:", error);
       }
     };
 
@@ -581,7 +646,7 @@ export default {
         const response = await auditService.getUsers();
         users.value = response;
       } catch (error) {
-        console.error('Error loading users:', error);
+        console.error("Error loading users:", error);
       }
     };
 
@@ -591,7 +656,7 @@ export default {
         loadAuditLogs(),
         loadStatistics(),
         loadTables(),
-        loadUsers()
+        loadUsers(),
       ]);
     };
 
@@ -608,52 +673,56 @@ export default {
     const applyTimeRange = () => {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      
+
       switch (selectedTimeRange.value) {
-        case 'today':
-          dateFrom.value = today.toISOString().split('T')[0];
-          dateTo.value = now.toISOString().split('T')[0];
+        case "today":
+          dateFrom.value = today.toISOString().split("T")[0];
+          dateTo.value = now.toISOString().split("T")[0];
           break;
-        case 'yesterday':
+        case "yesterday":
           const yesterday = new Date(today);
           yesterday.setDate(yesterday.getDate() - 1);
-          dateFrom.value = yesterday.toISOString().split('T')[0];
-          dateTo.value = yesterday.toISOString().split('T')[0];
+          dateFrom.value = yesterday.toISOString().split("T")[0];
+          dateTo.value = yesterday.toISOString().split("T")[0];
           break;
-        case 'week':
+        case "week":
           const weekStart = new Date(today);
           weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-          dateFrom.value = weekStart.toISOString().split('T')[0];
-          dateTo.value = now.toISOString().split('T')[0];
+          dateFrom.value = weekStart.toISOString().split("T")[0];
+          dateTo.value = now.toISOString().split("T")[0];
           break;
-        case 'month':
+        case "month":
           const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-          dateFrom.value = monthStart.toISOString().split('T')[0];
-          dateTo.value = now.toISOString().split('T')[0];
+          dateFrom.value = monthStart.toISOString().split("T")[0];
+          dateTo.value = now.toISOString().split("T")[0];
           break;
-        case 'quarter':
-          const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
-          dateFrom.value = quarterStart.toISOString().split('T')[0];
-          dateTo.value = now.toISOString().split('T')[0];
+        case "quarter":
+          const quarterStart = new Date(
+            now.getFullYear(),
+            Math.floor(now.getMonth() / 3) * 3,
+            1
+          );
+          dateFrom.value = quarterStart.toISOString().split("T")[0];
+          dateTo.value = now.toISOString().split("T")[0];
           break;
         default:
-          dateFrom.value = '';
-          dateTo.value = '';
+          dateFrom.value = "";
+          dateTo.value = "";
       }
       applyFilters();
     };
 
     const clearFilters = () => {
-      searchTerm.value = '';
-      selectedAction.value = '';
-      selectedTable.value = '';
-      selectedUser.value = '';
-      selectedIp.value = '';
-      selectedRecordId.value = '';
-      selectedTimeRange.value = '';
-      dateFrom.value = '';
-      dateTo.value = '';
-      sortBy.value = 'created_at';
+      searchTerm.value = "";
+      selectedAction.value = "";
+      selectedTable.value = "";
+      selectedUser.value = "";
+      selectedIp.value = "";
+      selectedRecordId.value = "";
+      selectedTimeRange.value = "";
+      dateFrom.value = "";
+      dateTo.value = "";
+      sortBy.value = "created_at";
       currentPage.value = 1;
       loadAuditLogs();
     };
@@ -662,7 +731,7 @@ export default {
       if (isAllSelected.value) {
         selectedItems.value = [];
       } else {
-        selectedItems.value = auditLogs.value.map(log => log.id);
+        selectedItems.value = auditLogs.value.map((log) => log.id);
       }
     };
 
@@ -692,31 +761,31 @@ export default {
         };
 
         const response = await auditService.exportLogs(params);
-        
+
         // Create download link
-        const blob = new Blob([response], { type: 'text/csv' });
+        const blob = new Blob([response], { type: "text/csv" });
         const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = url;
-        link.download = 'audit-logs-export.csv';
+        link.download = "audit-logs-export.csv";
         link.click();
         window.URL.revokeObjectURL(url);
-        
-        showToast('Audit logs exported successfully', 'success');
+
+        showToast("Audit logs exported successfully", "success");
       } catch (error) {
-        console.error('Error exporting audit logs:', error);
-        showToast('Failed to export audit logs', 'error');
+        console.error("Error exporting audit logs:", error);
+        showToast("Failed to export audit logs", "error");
       }
     };
 
     const formatDateTime = (dateString) => {
-      return new Date(dateString).toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
+      return new Date(dateString).toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
       });
     };
 
@@ -729,7 +798,7 @@ export default {
       const diffHours = Math.floor(diffMins / 60);
       const diffDays = Math.floor(diffHours / 24);
 
-      if (diffSecs < 60) return 'Just now';
+      if (diffSecs < 60) return "Just now";
       if (diffMins < 60) return `${diffMins}m ago`;
       if (diffHours < 24) return `${diffHours}h ago`;
       if (diffDays < 7) return `${diffDays}d ago`;
@@ -737,38 +806,45 @@ export default {
     };
 
     const formatTableName = (tableName) => {
-      return tableName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      return tableName
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (l) => l.toUpperCase());
     };
 
     const getInitials = (name) => {
-      if (!name) return '??';
-      return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+      if (!name) return "??";
+      return name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .substring(0, 2);
     };
 
     const getActionBadgeClass = (action) => {
       const classes = {
-        'CREATE': 'bg-success',
-        'UPDATE': 'bg-warning',
-        'DELETE': 'bg-danger',
-        'BULK_UPDATE': 'bg-info',
-        'BULK_DELETE': 'bg-danger',
-        'LOGIN': 'bg-primary',
-        'LOGOUT': 'bg-secondary',
+        CREATE: "bg-success",
+        UPDATE: "bg-warning",
+        DELETE: "bg-danger",
+        BULK_UPDATE: "bg-info",
+        BULK_DELETE: "bg-danger",
+        LOGIN: "bg-primary",
+        LOGOUT: "bg-secondary",
       };
-      return classes[action] || 'bg-secondary';
+      return classes[action] || "bg-secondary";
     };
 
     const getActionIcon = (action) => {
       const icons = {
-        'CREATE': 'fas fa-plus',
-        'UPDATE': 'fas fa-edit',
-        'DELETE': 'fas fa-trash',
-        'BULK_UPDATE': 'fas fa-edit',
-        'BULK_DELETE': 'fas fa-trash-alt',
-        'LOGIN': 'fas fa-sign-in-alt',
-        'LOGOUT': 'fas fa-sign-out-alt',
+        CREATE: "fas fa-plus",
+        UPDATE: "fas fa-edit",
+        DELETE: "fas fa-trash",
+        BULK_UPDATE: "fas fa-edit",
+        BULK_DELETE: "fas fa-trash-alt",
+        LOGIN: "fas fa-sign-in-alt",
+        LOGOUT: "fas fa-sign-out-alt",
       };
-      return icons[action] || 'fas fa-question';
+      return icons[action] || "fas fa-question";
     };
 
     const hasChanges = (log) => {
@@ -900,16 +976,16 @@ code {
   .audit-logs {
     padding: 0.5rem;
   }
-  
+
   .d-flex.gap-2 {
     flex-direction: column;
     gap: 0.5rem !important;
   }
-  
+
   .changes-summary {
     max-width: 150px;
   }
-  
+
   .avatar-sm {
     width: 24px;
     height: 24px;

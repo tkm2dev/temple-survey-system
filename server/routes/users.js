@@ -10,6 +10,201 @@ const router = express.Router();
 // Apply authentication to all user routes
 router.use(authenticateToken);
 
+// @route   GET /api/users/statistics
+// @desc    Get user statistics
+// @access  Private
+router.get("/statistics", async (req, res) => {
+  try {
+    console.log("📊 [USERS] Getting user statistics");
+
+    // Get total users count
+    const totalQuery = "SELECT COUNT(*) as total FROM users";
+    const totalResult = await executeQuery(totalQuery);
+    const total = totalResult[0].total;
+
+    // Get active users count
+    const activeQuery =
+      "SELECT COUNT(*) as active FROM users WHERE is_active = 1";
+    const activeResult = await executeQuery(activeQuery);
+    const active = activeResult[0].active;
+
+    // Get inactive users count
+    const inactiveQuery =
+      "SELECT COUNT(*) as inactive FROM users WHERE is_active = 0";
+    const inactiveResult = await executeQuery(inactiveQuery);
+    const inactive = inactiveResult[0].inactive;
+
+    // Get pending users count
+    const pendingQuery =
+      "SELECT COUNT(*) as pending FROM users WHERE approval_status = 'pending'";
+    const pendingResult = await executeQuery(pendingQuery);
+    const pending = pendingResult[0].pending;
+
+    const statistics = {
+      total,
+      active,
+      inactive,
+      pending,
+    };
+
+    console.log("✅ [USERS] Statistics retrieved successfully:", statistics);
+
+    res.json({
+      success: true,
+      ...statistics,
+    });
+  } catch (error) {
+    console.error("💥 [USERS] Error getting statistics:", error);
+    logger.error("Error getting user statistics:", error);
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการดึงสถิติผู้ใช้งาน",
+    });
+  }
+});
+
+// @route   GET /api/users/paginated
+// @desc    Get users with pagination
+// @access  Private
+router.get("/paginated", async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 12,
+      search = "",
+      role = "",
+      status = "",
+      approval_status = "",
+      department = "",
+      sort_field = "created_at",
+      sort_direction = "desc",
+    } = req.query;
+
+    const offset = (page - 1) * limit;
+
+    console.log("📄 [USERS] Getting paginated users", {
+      page,
+      limit,
+      search,
+      role,
+      status,
+      approval_status,
+      department,
+      sort_field,
+      sort_direction,
+    });
+
+    // Build WHERE clause
+    let whereConditions = ["1=1"];
+    let queryParams = [];
+
+    if (search) {
+      whereConditions.push(`(
+        first_name LIKE ? OR 
+        last_name LIKE ? OR 
+        username LIKE ? OR 
+        email LIKE ?
+      )`);
+      const searchTerm = `%${search}%`;
+      queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    if (role) {
+      whereConditions.push("role = ?");
+      queryParams.push(role);
+    }
+
+    if (status !== "") {
+      whereConditions.push("is_active = ?");
+      queryParams.push(status === "1" || status === true ? 1 : 0);
+    }
+
+    if (approval_status) {
+      whereConditions.push("approval_status = ?");
+      queryParams.push(approval_status);
+    }
+
+    if (department) {
+      whereConditions.push("department = ?");
+      queryParams.push(department);
+    }
+
+    const whereClause = whereConditions.join(" AND ");
+
+    // Validate sort field
+    const allowedSortFields = [
+      "user_id",
+      "username",
+      "first_name",
+      "last_name",
+      "email",
+      "role",
+      "is_active",
+      "approval_status",
+      "created_at",
+      "department",
+      "position",
+    ];
+
+    const sortField = allowedSortFields.includes(sort_field)
+      ? sort_field
+      : "created_at";
+    const sortDir = sort_direction.toLowerCase() === "asc" ? "ASC" : "DESC";
+
+    // Get total count for pagination
+    const countQuery = `SELECT COUNT(*) as total FROM users WHERE ${whereClause}`;
+    const countResult = await executeQuery(countQuery, queryParams);
+    const totalRecords = countResult[0].total;
+
+    // Get paginated data
+    const dataQuery = `
+      SELECT 
+        user_id, username, role, first_name, last_name, email, phone, line_id,
+        is_active, approval_status, rank, position, department, notes, 
+        profile_image, created_at, updated_at
+      FROM users 
+      WHERE ${whereClause}
+      ORDER BY ${sortField} ${sortDir}
+      LIMIT ? OFFSET ?
+    `;
+
+    const users = await executeQuery(dataQuery, [
+      ...queryParams,
+      parseInt(limit),
+      parseInt(offset),
+    ]);
+
+    const totalPages = Math.ceil(totalRecords / limit);
+    const currentPage = parseInt(page);
+
+    const response = {
+      success: true,
+      data: users,
+      pagination: {
+        currentPage,
+        totalPages,
+        totalRecords,
+        itemsPerPage: parseInt(limit),
+        hasNextPage: currentPage < totalPages,
+        hasPreviousPage: currentPage > 1,
+      },
+    };
+
+    console.log(
+      `✅ [USERS] Retrieved ${users.length} users (page ${currentPage}/${totalPages})`
+    );
+
+    res.json(response);
+  } catch (error) {
+    console.error("💥 [USERS] Error getting paginated users:", error);
+    logger.error("Error getting paginated users:", error);
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้งาน",
+    });
+  }
+});
+
 // @route   GET /api/users
 // @desc    Get all users
 // @access  Private/Admin
@@ -361,14 +556,20 @@ router.put("/:id", authorizeRoles("Admin"), async (req, res) => {
 
     console.log("Update result:", result);
     console.log("Rows affected:", result.affectedRows);
-    console.log("Updated notes value:", notes !== undefined ? notes : currentUser.notes);
+    console.log(
+      "Updated notes value:",
+      notes !== undefined ? notes : currentUser.notes
+    );
 
     // Verify the update by querying the database
     const updatedUser = await executeQuery(
       "SELECT notes FROM users WHERE user_id = ?",
       [id]
     );
-    console.log("Verified notes in database after update:", updatedUser[0]?.notes);
+    console.log(
+      "Verified notes in database after update:",
+      updatedUser[0]?.notes
+    );
 
     // Log activity
     await logActivity(
@@ -610,7 +811,7 @@ router.patch("/bulk/status", authorizeRoles("Admin"), async (req, res) => {
       });
     }
 
-    if (typeof is_active !== 'boolean') {
+    if (typeof is_active !== "boolean") {
       return res.status(400).json({
         success: false,
         message: "สถานะการใช้งานไม่ถูกต้อง",
@@ -626,7 +827,7 @@ router.patch("/bulk/status", authorizeRoles("Admin"), async (req, res) => {
     }
 
     // Update multiple users
-    const placeholders = userIds.map(() => '?').join(',');
+    const placeholders = userIds.map(() => "?").join(",");
     const result = await executeQuery(
       `UPDATE users SET is_active = ? WHERE user_id IN (${placeholders})`,
       [is_active, ...userIds]
@@ -642,7 +843,7 @@ router.patch("/bulk/status", authorizeRoles("Admin"), async (req, res) => {
         {
           field: "is_active",
           new_value: is_active,
-          operation: "bulk_status_change"
+          operation: "bulk_status_change",
         },
         req.ip
       );
@@ -653,8 +854,8 @@ router.patch("/bulk/status", authorizeRoles("Admin"), async (req, res) => {
       message: `อัปเดตสถานะ ${result.affectedRows} ผู้ใช้สำเร็จ`,
       data: {
         affected_rows: result.affectedRows,
-        updated_status: is_active
-      }
+        updated_status: is_active,
+      },
     });
   } catch (error) {
     logger.error("Bulk update user status error:", error.message);
@@ -688,7 +889,7 @@ router.patch("/bulk/approval", authorizeRoles("Admin"), async (req, res) => {
     }
 
     // Update multiple users
-    const placeholders = userIds.map(() => '?').join(',');
+    const placeholders = userIds.map(() => "?").join(",");
     const result = await executeQuery(
       `UPDATE users SET approval_status = ? WHERE user_id IN (${placeholders})`,
       [approval_status, ...userIds]
@@ -704,7 +905,7 @@ router.patch("/bulk/approval", authorizeRoles("Admin"), async (req, res) => {
         {
           field: "approval_status",
           new_value: approval_status,
-          operation: "bulk_approval_change"
+          operation: "bulk_approval_change",
         },
         req.ip
       );
@@ -715,8 +916,8 @@ router.patch("/bulk/approval", authorizeRoles("Admin"), async (req, res) => {
       message: `อัปเดตสถานะการอนุมัติ ${result.affectedRows} ผู้ใช้สำเร็จ`,
       data: {
         affected_rows: result.affectedRows,
-        updated_approval_status: approval_status
-      }
+        updated_approval_status: approval_status,
+      },
     });
   } catch (error) {
     logger.error("Bulk update user approval status error:", error.message);
@@ -750,7 +951,7 @@ router.delete("/bulk", authorizeRoles("Admin"), async (req, res) => {
     }
 
     // Get user data before deletion for logging
-    const placeholders = userIds.map(() => '?').join(',');
+    const placeholders = userIds.map(() => "?").join(",");
     const usersToDelete = await executeQuery(
       `SELECT * FROM users WHERE user_id IN (${placeholders})`,
       userIds
@@ -773,9 +974,9 @@ router.delete("/bulk", authorizeRoles("Admin"), async (req, res) => {
           deleted_user: {
             username: user.username,
             email: user.email,
-            role: user.role
+            role: user.role,
           },
-          operation: "bulk_delete"
+          operation: "bulk_delete",
         },
         req.ip
       );
@@ -785,14 +986,288 @@ router.delete("/bulk", authorizeRoles("Admin"), async (req, res) => {
       success: true,
       message: `ลบ ${result.affectedRows} ผู้ใช้สำเร็จ`,
       data: {
-        affected_rows: result.affectedRows
-      }
+        affected_rows: result.affectedRows,
+      },
     });
   } catch (error) {
     logger.error("Bulk delete users error:", error.message);
     res.status(500).json({
       success: false,
       message: "เกิดข้อผิดพลาดในการลบผู้ใช้",
+    });
+  }
+});
+
+// @route   PATCH /api/users/bulk/approve
+// @desc    Bulk approve users
+// @access  Private/Admin
+router.patch("/bulk/approve", authorizeRoles("Admin"), async (req, res) => {
+  try {
+    const { userIds } = req.body;
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "กรุณาระบุรายการผู้ใช้ที่ต้องการอนุมัติ",
+      });
+    }
+
+    console.log(`📝 [USERS] Bulk approving ${userIds.length} users`);
+
+    const placeholders = userIds.map(() => "?").join(",");
+    const query = `
+      UPDATE users 
+      SET approval_status = 'approved', updated_at = NOW() 
+      WHERE user_id IN (${placeholders})
+    `;
+
+    const result = await executeQuery(query, userIds);
+
+    // Log activity for each user
+    for (const userId of userIds) {
+      await logActivity(
+        req.user.user_id,
+        "bulk_approve_user",
+        "users",
+        userId,
+        { approval_status: "approved" },
+        req.ip
+      );
+    }
+
+    console.log(`✅ [USERS] Bulk approved ${result.affectedRows} users`);
+
+    res.json({
+      success: true,
+      message: `อนุมัติ ${result.affectedRows} ผู้ใช้สำเร็จ`,
+      data: {
+        affected_rows: result.affectedRows,
+      },
+    });
+  } catch (error) {
+    console.error("💥 [USERS] Bulk approve error:", error);
+    logger.error("Bulk approve users error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการอนุมัติผู้ใช้",
+    });
+  }
+});
+
+// @route   PATCH /api/users/bulk/reject
+// @desc    Bulk reject users
+// @access  Private/Admin
+router.patch("/bulk/reject", authorizeRoles("Admin"), async (req, res) => {
+  try {
+    const { userIds } = req.body;
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "กรุณาระบุรายการผู้ใช้ที่ต้องการปฏิเสธ",
+      });
+    }
+
+    console.log(`📝 [USERS] Bulk rejecting ${userIds.length} users`);
+
+    const placeholders = userIds.map(() => "?").join(",");
+    const query = `
+      UPDATE users 
+      SET approval_status = 'rejected', updated_at = NOW() 
+      WHERE user_id IN (${placeholders})
+    `;
+
+    const result = await executeQuery(query, userIds);
+
+    // Log activity for each user
+    for (const userId of userIds) {
+      await logActivity(
+        req.user.user_id,
+        "bulk_reject_user",
+        "users",
+        userId,
+        { approval_status: "rejected" },
+        req.ip
+      );
+    }
+
+    console.log(`✅ [USERS] Bulk rejected ${result.affectedRows} users`);
+
+    res.json({
+      success: true,
+      message: `ปฏิเสธ ${result.affectedRows} ผู้ใช้สำเร็จ`,
+      data: {
+        affected_rows: result.affectedRows,
+      },
+    });
+  } catch (error) {
+    console.error("💥 [USERS] Bulk reject error:", error);
+    logger.error("Bulk reject users error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการปฏิเสธผู้ใช้",
+    });
+  }
+});
+
+// @route   POST /api/users/export
+// @desc    Export selected users to Excel
+// @access  Private/Admin
+router.post("/export", authorizeRoles("Admin"), async (req, res) => {
+  try {
+    const { userIds } = req.body;
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "กรุณาระบุรายการผู้ใช้ที่ต้องการส่งออก",
+      });
+    }
+
+    console.log(`📤 [USERS] Exporting ${userIds.length} users`);
+
+    const placeholders = userIds.map(() => "?").join(",");
+    const query = `
+      SELECT 
+        user_id, username, role, first_name, last_name, email, phone, line_id,
+        is_active, approval_status, rank, position, department, notes, 
+        created_at, updated_at
+      FROM users 
+      WHERE user_id IN (${placeholders})
+      ORDER BY created_at DESC
+    `;
+
+    const users = await executeQuery(query, userIds);
+
+    // Transform data for export
+    const exportData = users.map((user) => ({
+      รหัสผู้ใช้: user.user_id,
+      ชื่อผู้ใช้: user.username,
+      บทบาท: user.role,
+      ชื่อ: user.first_name,
+      นามสกุล: user.last_name,
+      อีเมล: user.email,
+      เบอร์โทร: user.phone || "",
+      "LINE ID": user.line_id || "",
+      ยศ: user.rank || "",
+      ตำแหน่ง: user.position || "",
+      หน่วยงาน: user.department || "",
+      สถานะ: user.is_active ? "ใช้งาน" : "ปิดใช้งาน",
+      สถานะการอนุมัติ:
+        user.approval_status === "approved"
+          ? "อนุมัติแล้ว"
+          : user.approval_status === "rejected"
+          ? "ปฏิเสธ"
+          : "รออนุมัติ",
+      หมายเหตุ: user.notes || "",
+      วันที่สร้าง: new Date(user.created_at).toLocaleDateString("th-TH"),
+      วันที่อัปเดต: user.updated_at
+        ? new Date(user.updated_at).toLocaleDateString("th-TH")
+        : "",
+    }));
+
+    // Create Excel file (mock response for now)
+    console.log(`✅ [USERS] Export data prepared for ${users.length} users`);
+
+    // In a real implementation, you would use a library like xlsx to create the file
+    // For now, return the data
+    res.json({
+      success: true,
+      message: `ส่งออกข้อมูล ${users.length} ผู้ใช้สำเร็จ`,
+      data: exportData,
+    });
+
+    // Log export activity
+    await logActivity(
+      req.user.user_id,
+      "export_users",
+      "users",
+      null,
+      { exported_count: users.length, user_ids: userIds },
+      req.ip
+    );
+  } catch (error) {
+    console.error("💥 [USERS] Export error:", error);
+    logger.error("Export users error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการส่งออกข้อมูลผู้ใช้",
+    });
+  }
+});
+
+// @route   GET /api/users/export/all
+// @desc    Export all users to Excel
+// @access  Private/Admin
+router.get("/export/all", authorizeRoles("Admin"), async (req, res) => {
+  try {
+    console.log("📤 [USERS] Exporting all users");
+
+    const query = `
+      SELECT 
+        user_id, username, role, first_name, last_name, email, phone, line_id,
+        is_active, approval_status, rank, position, department, notes, 
+        created_at, updated_at
+      FROM users 
+      ORDER BY created_at DESC
+    `;
+
+    const users = await executeQuery(query);
+
+    // Transform data for export
+    const exportData = users.map((user) => ({
+      รหัสผู้ใช้: user.user_id,
+      ชื่อผู้ใช้: user.username,
+      บทบาท: user.role,
+      ชื่อ: user.first_name,
+      นามสกุล: user.last_name,
+      อีเมล: user.email,
+      เบอร์โทร: user.phone || "",
+      "LINE ID": user.line_id || "",
+      ยศ: user.rank || "",
+      ตำแหน่ง: user.position || "",
+      หน่วยงาน: user.department || "",
+      สถานะ: user.is_active ? "ใช้งาน" : "ปิดใช้งาน",
+      สถานะการอนุมัติ:
+        user.approval_status === "approved"
+          ? "อนุมัติแล้ว"
+          : user.approval_status === "rejected"
+          ? "ปฏิเสธ"
+          : "รออนุมัติ",
+      หมายเหตุ: user.notes || "",
+      วันที่สร้าง: new Date(user.created_at).toLocaleDateString("th-TH"),
+      วันที่อัปเดต: user.updated_at
+        ? new Date(user.updated_at).toLocaleDateString("th-TH")
+        : "",
+    }));
+
+    console.log(
+      `✅ [USERS] Export all data prepared for ${users.length} users`
+    );
+
+    // In a real implementation, you would use a library like xlsx to create the file
+    // For now, return the data
+    res.json({
+      success: true,
+      message: `ส่งออกข้อมูลผู้ใช้ทั้งหมด ${users.length} คนสำเร็จ`,
+      data: exportData,
+    });
+
+    // Log export activity
+    await logActivity(
+      req.user.user_id,
+      "export_all_users",
+      "users",
+      null,
+      { exported_count: users.length },
+      req.ip
+    );
+  } catch (error) {
+    console.error("💥 [USERS] Export all error:", error);
+    logger.error("Export all users error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการส่งออกข้อมูลผู้ใช้ทั้งหมด",
     });
   }
 });

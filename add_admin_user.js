@@ -11,7 +11,9 @@ async function addNewAdmin() {
 
     // Generate password hash
     const passwordHash = await bcrypt.hash(password, saltRounds);
-    console.log(`✅ Password hash generated: ${passwordHash.substring(0, 20)}...`);
+    console.log(
+      `✅ Password hash generated: ${passwordHash.substring(0, 20)}...`
+    );
 
     // Check if user already exists
     console.log(`🔍 Checking if user already exists...`);
@@ -37,12 +39,12 @@ async function addNewAdmin() {
       [
         username,
         passwordHash,
-        'Admin',
-        'นาย',
-        'โทฟะโตริ',
-        'tophatori@survey.gov.th',
-        1,  // Use 1 instead of true for MySQL
-        'approved'
+        "Admin",
+        "นาย",
+        "โทฟะโตริ",
+        "tophatori@survey.gov.th",
+        1, // Use 1 instead of true for MySQL
+        "approved",
       ]
     );
 
@@ -59,7 +61,6 @@ async function addNewAdmin() {
     console.log(`🎉 You can now login with:`);
     console.log(`   👤 Username: ${username}`);
     console.log(`   🔐 Password: ${password}`);
-
   } catch (error) {
     console.error(`💥 Error creating admin user:`, error.message);
     console.error(`💥 Full error:`, error);
@@ -67,8 +68,10 @@ async function addNewAdmin() {
 }
 
 // Run the function
-addNewAdmin().then(() => {
-  console.log(`\n🏁 Script completed`);
-}).catch(error => {
-  console.error(`💥 Script failed:`, error.message);
-});
+addNewAdmin()
+  .then(() => {
+    console.log(`\n🏁 Script completed`);
+  })
+  .catch((error) => {
+    console.error(`💥 Script failed:`, error.message);
+  });

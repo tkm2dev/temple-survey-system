@@ -8,6 +8,18 @@ export const userService = {
     return response.data;
   },
 
+  // Get users with pagination
+  async getUsersPaginated(params = {}) {
+    const response = await api.get("/users/paginated", { params });
+    return response.data;
+  },
+
+  // Get user statistics
+  async getStatistics() {
+    const response = await api.get("/users/statistics");
+    return response.data;
+  },
+
   // Get single user
   async getUser(id) {
     const response = await api.get(`/users/${id}`);
@@ -33,10 +45,8 @@ export const userService = {
   },
 
   // Update user status
-  async updateUserStatus(id, isActive) {
-    const response = await api.patch(`/users/${id}/status`, {
-      is_active: isActive,
-    });
+  async updateUserStatus(id, statusData) {
+    const response = await api.patch(`/users/${id}/status`, statusData);
     return response.data;
   },
 
@@ -47,10 +57,24 @@ export const userService = {
   },
 
   // Bulk operations
-  async bulkUpdateStatus(userIds, isActive) {
+  async bulkUpdateStatus(userIds, status) {
     const response = await api.patch("/users/bulk/status", {
       userIds,
-      is_active: isActive,
+      is_active: status,
+    });
+    return response.data;
+  },
+
+  async bulkApprove(userIds) {
+    const response = await api.patch("/users/bulk/approve", {
+      userIds,
+    });
+    return response.data;
+  },
+
+  async bulkReject(userIds) {
+    const response = await api.patch("/users/bulk/reject", {
+      userIds,
     });
     return response.data;
   },
@@ -63,9 +87,33 @@ export const userService = {
     return response.data;
   },
 
+  async bulkDelete(userIds) {
+    const response = await api.delete("/users/bulk", {
+      data: { userIds },
+    });
+    return response.data;
+  },
+
   async bulkDeleteUsers(userIds) {
     const response = await api.delete("/users/bulk", {
       data: { userIds },
+    });
+    return response.data;
+  },
+
+  // Export operations
+  async bulkExport(userIds) {
+    const response = await api.post(
+      "/users/export",
+      { userIds },
+      { responseType: "blob" }
+    );
+    return response.data;
+  },
+
+  async exportAll() {
+    const response = await api.get("/users/export/all", {
+      responseType: "blob",
     });
     return response.data;
   },

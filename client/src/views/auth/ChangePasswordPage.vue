@@ -35,10 +35,17 @@
                     class="btn btn-outline-secondary"
                     @click="showCurrentPassword = !showCurrentPassword"
                   >
-                    <i :class="showCurrentPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                    <i
+                      :class="
+                        showCurrentPassword ? 'bi bi-eye-slash' : 'bi bi-eye'
+                      "
+                    ></i>
                   </button>
                 </div>
-                <div v-if="errors.currentPassword" class="invalid-feedback d-block">
+                <div
+                  v-if="errors.currentPassword"
+                  class="invalid-feedback d-block"
+                >
                   {{ errors.currentPassword }}
                 </div>
               </div>
@@ -67,7 +74,9 @@
                     class="btn btn-outline-secondary"
                     @click="showNewPassword = !showNewPassword"
                   >
-                    <i :class="showNewPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                    <i
+                      :class="showNewPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"
+                    ></i>
                   </button>
                 </div>
                 <div v-if="errors.newPassword" class="invalid-feedback d-block">
@@ -102,10 +111,17 @@
                     class="btn btn-outline-secondary"
                     @click="showConfirmPassword = !showConfirmPassword"
                   >
-                    <i :class="showConfirmPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                    <i
+                      :class="
+                        showConfirmPassword ? 'bi bi-eye-slash' : 'bi bi-eye'
+                      "
+                    ></i>
                   </button>
                 </div>
-                <div v-if="errors.confirmPassword" class="invalid-feedback d-block">
+                <div
+                  v-if="errors.confirmPassword"
+                  class="invalid-feedback d-block"
+                >
                   {{ errors.confirmPassword }}
                 </div>
               </div>
@@ -117,7 +133,11 @@
               </div>
 
               <!-- Success Alert -->
-              <div v-if="successMessage" class="alert alert-success" role="alert">
+              <div
+                v-if="successMessage"
+                class="alert alert-success"
+                role="alert"
+              >
                 <i class="bi bi-check-circle me-2"></i>
                 {{ successMessage }}
               </div>
@@ -138,7 +158,10 @@
                   :disabled="loading"
                 >
                   <span v-if="loading">
-                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    <span
+                      class="spinner-border spinner-border-sm me-2"
+                      role="status"
+                    ></span>
                     กำลังเปลี่ยน...
                   </span>
                   <span v-else>
@@ -258,10 +281,10 @@ export default {
 
         if (response.success) {
           successMessage.value = response.message;
-          
+
           // Clear form
           Object.keys(form).forEach((key) => (form[key] = ""));
-          
+
           // Redirect after delay
           setTimeout(() => {
             router.push("/profile");
@@ -270,7 +293,8 @@ export default {
           errorMessage.value = response.message;
         }
       } catch (error) {
-        const message = error.response?.data?.message || "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน";
+        const message =
+          error.response?.data?.message || "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน";
         errorMessage.value = message;
         console.error("Change password error:", error);
       } finally {
@@ -360,7 +384,7 @@ export default {
   .container-fluid {
     padding: 1rem;
   }
-  
+
   .card {
     margin: 0;
   }

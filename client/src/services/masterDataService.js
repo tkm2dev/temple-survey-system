@@ -318,7 +318,7 @@ export const masterDataService = {
 
   // General master data operations
   async getMasterData(params = {}) {
-    const response = await api.get('/master-data', { params });
+    const response = await api.get("/master-data", { params });
     return response.data;
   },
 
@@ -328,7 +328,7 @@ export const masterDataService = {
   },
 
   async createMasterData(data) {
-    const response = await api.post('/master-data', data);
+    const response = await api.post("/master-data", data);
     return response.data;
   },
 
@@ -343,20 +343,20 @@ export const masterDataService = {
   },
 
   async getCategories() {
-    const response = await api.get('/master-data/categories');
+    const response = await api.get("/master-data/categories");
     return response.data;
   },
 
   async exportMasterData(params = {}) {
-    const response = await api.get('/master-data/export', {
+    const response = await api.get("/master-data/export", {
       params,
-      responseType: 'blob',
+      responseType: "blob",
     });
     return response.data;
   },
 
   async bulkUpdateStatus(masterDataIds, status) {
-    const response = await api.patch('/master-data/bulk/status', {
+    const response = await api.patch("/master-data/bulk/status", {
       masterDataIds,
       status,
     });
@@ -364,7 +364,7 @@ export const masterDataService = {
   },
 
   async bulkDeleteMasterData(masterDataIds) {
-    const response = await api.delete('/master-data/bulk', {
+    const response = await api.delete("/master-data/bulk", {
       data: { masterDataIds },
     });
     return response.data;
@@ -376,12 +376,126 @@ export const masterDataService = {
   },
 
   async getMasterDataByCategory(category, params = {}) {
-    const response = await api.get(`/master-data/category/${category}`, { params });
+    const response = await api.get(`/master-data/category/${category}`, {
+      params,
+    });
     return response.data;
   },
 
   async validateJsonValue(value) {
-    const response = await api.post('/master-data/validate-json', { value });
+    const response = await api.post("/master-data/validate-json", { value });
+    return response.data;
+  },
+
+  // Enhanced bulk operations for comprehensive management
+  async bulkUpdate(items, updateData) {
+    const response = await api.patch("/master-data/bulk/update", {
+      items,
+      updateData,
+    });
+    return response.data;
+  },
+
+  async bulkStatusChange(ids, status) {
+    const response = await api.patch("/master-data/bulk/status-change", {
+      ids,
+      status,
+    });
+    return response.data;
+  },
+
+  async bulkDelete(ids) {
+    const response = await api.delete("/master-data/bulk/delete", {
+      data: { ids },
+    });
+    return response.data;
+  },
+
+  async bulkAssign(ids, assignmentData) {
+    const response = await api.patch("/master-data/bulk/assign", {
+      ids,
+      assignmentData,
+    });
+    return response.data;
+  },
+
+  async bulkExport(ids, format = "excel") {
+    const response = await api.post(
+      "/master-data/bulk/export",
+      {
+        ids,
+        format,
+      },
+      {
+        responseType: "blob",
+      }
+    );
+    return response.data;
+  },
+
+  // Advanced pagination and filtering
+  async getMasterDataPaginated(params = {}) {
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = "created_at",
+      sortOrder = "desc",
+      search = "",
+      category = "",
+      status = "",
+      dateFrom = "",
+      dateTo = "",
+      ...otherFilters
+    } = params;
+
+    const response = await api.get("/master-data/paginated", {
+      params: {
+        page,
+        limit,
+        sortBy,
+        sortOrder,
+        search,
+        category,
+        status,
+        dateFrom,
+        dateTo,
+        ...otherFilters,
+      },
+    });
+    return response.data;
+  },
+
+  // Advanced search with multiple criteria
+  async advancedSearch(searchCriteria) {
+    const response = await api.post(
+      "/master-data/advanced-search",
+      searchCriteria
+    );
+    return response.data;
+  },
+
+  // Get filter options for dropdown menus
+  async getFilterOptions() {
+    const response = await api.get("/master-data/filter-options");
+    return response.data;
+  },
+
+  // Batch operations with progress tracking
+  async batchProcess(operation, data) {
+    const response = await api.post(`/master-data/batch/${operation}`, data, {
+      onUploadProgress: (progressEvent) => {
+        const percentCompleted = Math.round(
+          (progressEvent.loaded * 100) / progressEvent.total
+        );
+        console.log(`Batch Process Progress: ${percentCompleted}%`);
+      },
+    });
+    return response.data;
+  },
+
+  // Get batch operation status
+  async getBatchStatus(batchId) {
+    const response = await api.get(`/master-data/batch/status/${batchId}`);
     return response.data;
   },
 };

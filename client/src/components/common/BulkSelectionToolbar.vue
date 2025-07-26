@@ -5,19 +5,21 @@
         <div class="d-flex justify-content-between align-items-center">
           <div class="d-flex align-items-center">
             <i class="bi bi-check-circle text-primary me-2"></i>
-            <span class="fw-bold">เลือกแล้ว {{ selectedItems.length }} รายการ</span>
-            <button 
+            <span class="fw-bold"
+              >เลือกแล้ว {{ selectedItems.length }} รายการ</span
+            >
+            <button
               class="btn btn-link p-0 ms-2 text-decoration-none"
               @click="clearSelection"
             >
               <small>ล้างการเลือก</small>
             </button>
           </div>
-          
+
           <div class="d-flex gap-2">
             <slot name="bulk-actions" :selectedItems="selectedItems">
               <!-- Default bulk actions -->
-              <button 
+              <button
                 v-if="canBulkEdit"
                 class="btn btn-outline-primary btn-sm"
                 @click="$emit('bulk-edit', selectedItems)"
@@ -25,8 +27,8 @@
                 <i class="bi bi-pencil me-1"></i>
                 แก้ไขหลายรายการ
               </button>
-              
-              <button 
+
+              <button
                 v-if="canBulkStatus"
                 class="btn btn-outline-warning btn-sm"
                 @click="$emit('bulk-status-change', selectedItems)"
@@ -34,8 +36,8 @@
                 <i class="bi bi-toggle-on me-1"></i>
                 เปลี่ยนสถานะ
               </button>
-              
-              <button 
+
+              <button
                 v-if="canBulkDelete"
                 class="btn btn-outline-danger btn-sm"
                 @click="$emit('bulk-delete', selectedItems)"
@@ -53,36 +55,36 @@
 
 <script>
 export default {
-  name: 'BulkSelectionToolbar',
+  name: "BulkSelectionToolbar",
   props: {
     selectedItems: {
       type: Array,
-      required: true
+      required: true,
     },
     canBulkEdit: {
       type: Boolean,
-      default: true
+      default: true,
     },
     canBulkStatus: {
       type: Boolean,
-      default: true
+      default: true,
     },
     canBulkDelete: {
       type: Boolean,
-      default: true
-    }
+      default: true,
+    },
   },
-  emits: ['bulk-edit', 'bulk-status-change', 'bulk-delete', 'clear-selection'],
+  emits: ["bulk-edit", "bulk-status-change", "bulk-delete", "clear-selection"],
   setup(props, { emit }) {
     const clearSelection = () => {
-      emit('clear-selection')
-    }
+      emit("clear-selection");
+    };
 
     return {
-      clearSelection
-    }
-  }
-}
+      clearSelection,
+    };
+  },
+};
 </script>
 
 <style scoped>
@@ -94,7 +96,7 @@ export default {
 }
 
 .bulk-selection-toolbar .card {
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 576px) {
@@ -102,7 +104,7 @@ export default {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .bulk-selection-toolbar .d-flex:last-child {
     flex-direction: row;
     justify-content: center;

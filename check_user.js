@@ -3,10 +3,10 @@ const { executeQuery } = require("./server/config/database");
 async function checkUser() {
   try {
     console.log(`🔍 Checking for user 'tophatori'...`);
-    
+
     const users = await executeQuery(
       "SELECT user_id, username, role, first_name, last_name, email, is_active, approval_status, created_at FROM users WHERE username = ?",
-      ['tophatori']
+      ["tophatori"]
     );
 
     if (users.length > 0) {
@@ -23,15 +23,18 @@ async function checkUser() {
       console.log(`   - Created: ${user.created_at}`);
     } else {
       console.log(`❌ User 'tophatori' not found`);
-      
+
       // Show all users for reference
       console.log(`\n📋 All users in database:`);
-      const allUsers = await executeQuery("SELECT username, role, is_active, approval_status FROM users");
-      allUsers.forEach(user => {
-        console.log(`   - ${user.username} (${user.role}) - Active: ${user.is_active}, Status: ${user.approval_status}`);
+      const allUsers = await executeQuery(
+        "SELECT username, role, is_active, approval_status FROM users"
+      );
+      allUsers.forEach((user) => {
+        console.log(
+          `   - ${user.username} (${user.role}) - Active: ${user.is_active}, Status: ${user.approval_status}`
+        );
       });
     }
-
   } catch (error) {
     console.error(`💥 Error checking user:`, error.message);
   }
