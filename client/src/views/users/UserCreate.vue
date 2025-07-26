@@ -217,15 +217,17 @@
                       :class="{ 'is-invalid': errors.rank }"
                     >
                       <option value="">เลือกยศ (ถ้ามี)</option>
-                      <option value="ร.ต.">ร.ต.</option>
-                      <option value="ร.ท.">ร.ท.</option>
-                      <option value="ร.อ.">ร.อ.</option>
-                      <option value="พ.ต.">พ.ต.</option>
-                      <option value="พ.ท.">พ.ท.</option>
-                      <option value="พ.อ.">พ.อ.</option>
-                      <option value="พล.ต.">พล.ต.</option>
-                      <option value="พล.ท.">พล.ท.</option>
-                      <option value="พล.อ.">พล.อ.</option>
+                      <option value="ส.ต.ต.">สิบตำรวจตรี (ส.ต.ต.)</option>
+                      <option value="ส.ต.ท.">สิบตำรวจโท (ส.ต.ท.)</option>
+                      <option value="ส.ต.อ.">สิบตำรวจเอก (ส.ต.อ.)</option>
+                      <option value="จ.ส.ต.">จ่าสิบตำรวจ (จ.ส.ต.)</option>
+                      <option value="ด.ต.">ดาบตำรวจ (ด.ต.)</option>
+                      <option value="ร.ต.ต.">ร้อยตำรวจตรี (ร.ต.ต.)</option>
+                      <option value="ร.ต.ท.">ร้อยตำรวจโท (ร.ต.ท.)</option>
+                      <option value="ร.ต.อ.">ร้อยตำรวจเอก (ร.ต.อ.)</option>
+                      <option value="พ.ต.ต.">พันตำรวจตรี (พ.ต.ต.)</option>
+                      <option value="พ.ต.ท.">พันตำรวจโท (พ.ต.ท.)</option>
+                      <option value="พ.ต.อ.">พันตำรวจเอก (พ.ต.อ.)</option>
                     </select>
                     <div v-if="errors.rank" class="invalid-feedback">
                       {{ errors.rank }}
