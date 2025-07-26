@@ -41,9 +41,31 @@ export const userService = {
   },
 
   // Update user approval status
-  async updateUserApprovalStatus(id, approvalStatus) {
-    const response = await api.patch(`/users/${id}/approval`, {
+  async updateUserApproval(id, data) {
+    const response = await api.patch(`/users/${id}/approval`, data);
+    return response.data;
+  },
+
+  // Bulk operations
+  async bulkUpdateStatus(userIds, isActive) {
+    const response = await api.patch("/users/bulk/status", {
+      userIds,
+      is_active: isActive,
+    });
+    return response.data;
+  },
+
+  async bulkUpdateApproval(userIds, approvalStatus) {
+    const response = await api.patch("/users/bulk/approval", {
+      userIds,
       approval_status: approvalStatus,
+    });
+    return response.data;
+  },
+
+  async bulkDeleteUsers(userIds) {
+    const response = await api.delete("/users/bulk", {
+      data: { userIds },
     });
     return response.data;
   },

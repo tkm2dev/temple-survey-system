@@ -74,6 +74,22 @@ export const surveyService = {
     const response = await api.get("/surveys/statistics");
     return response.data;
   },
+
+  // Bulk operations
+  async bulkUpdateStatus(surveyIds, status) {
+    const response = await api.patch("/surveys/bulk/status", {
+      surveyIds,
+      status,
+    });
+    return response.data;
+  },
+
+  async bulkDeleteSurveys(surveyIds) {
+    const response = await api.delete("/surveys/bulk", {
+      data: { surveyIds },
+    });
+    return response.data;
+  },
 };
 
 export default surveyService;

@@ -455,4 +455,92 @@ router.put(
   }
 );
 
+// Bulk operations
+router.patch("/bulk/status", auth, async (req, res) => {
+  try {
+    const { surveyIds, status } = req.body;
+    
+    if (!surveyIds || !Array.isArray(surveyIds) || surveyIds.length === 0) {
+      return res.status(400).json({ message: "Survey IDs array is required" });
+    }
+
+    if (!["draft", "active", "completed", "archived"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    // Update surveys status
+    const result = await db.query(
+      "UPDATE surveys SET status = ?, updated_at = NOW() WHERE id IN (?)",
+      [status, surveyIds]
+    );
+
+    // Log audit entry
+    for (const surveyId of surveyIds) {
+      await db.query(
+        "INSERT INTO audit_logs (user_id, action, table_name, record_id, old_values, new_values) VALUES (?, ?, ?, ?, ?, ?)",
+        [
+          req.user.id,
+          "BULK_UPDATE",
+          "surveys",
+          surveyId,
+          JSON.stringify({ field: "status" }),
+          JSON.stringify({ status }),
+        ]
+      );
+    }
+
+    res.json({
+      message: `Successfully updated ${result.affectedRows} surveys`,
+      updatedCount: result.affectedRows,
+    });
+  } catch (error) {
+    console.error("Bulk status update error:", error);
+    res.status(500).json({ message: "Failed to update survey status" });
+  }
+});
+
+router.delete("/bulk", auth, async (req, res) => {
+  try {
+    const { surveyIds } = req.body;
+    
+    if (!surveyIds || !Array.isArray(surveyIds) || surveyIds.length === 0) {
+      return res.status(400).json({ message: "Survey IDs array is required" });
+    }
+
+    // Get surveys data for audit log before deletion
+    const surveysData = await db.query(
+      "SELECT id, title, status FROM surveys WHERE id IN (?)",
+      [surveyIds]
+    );
+
+    // Delete surveys
+    const result = await db.query(
+      "DELETE FROM surveys WHERE id IN (?)",
+      [surveyIds]
+    );
+
+    // Log audit entries
+    for (const survey of surveysData) {
+      await db.query(
+        "INSERT INTO audit_logs (user_id, action, table_name, record_id, old_values) VALUES (?, ?, ?, ?, ?)",
+        [
+          req.user.id,
+          "BULK_DELETE",
+          "surveys",
+          survey.id,
+          JSON.stringify(survey),
+        ]
+      );
+    }
+
+    res.json({
+      message: `Successfully deleted ${result.affectedRows} surveys`,
+      deletedCount: result.affectedRows,
+    });
+  } catch (error) {
+    console.error("Bulk delete error:", error);
+    res.status(500).json({ message: "Failed to delete surveys" });
+  }
+});
+
 module.exports = router;

@@ -315,6 +315,75 @@ export const masterDataService = {
     });
     return response.data;
   },
+
+  // General master data operations
+  async getMasterData(params = {}) {
+    const response = await api.get('/master-data', { params });
+    return response.data;
+  },
+
+  async getMasterDataById(id) {
+    const response = await api.get(`/master-data/${id}`);
+    return response.data;
+  },
+
+  async createMasterData(data) {
+    const response = await api.post('/master-data', data);
+    return response.data;
+  },
+
+  async updateMasterData(id, data) {
+    const response = await api.put(`/master-data/${id}`, data);
+    return response.data;
+  },
+
+  async deleteMasterData(id) {
+    const response = await api.delete(`/master-data/${id}`);
+    return response.data;
+  },
+
+  async getCategories() {
+    const response = await api.get('/master-data/categories');
+    return response.data;
+  },
+
+  async exportMasterData(params = {}) {
+    const response = await api.get('/master-data/export', {
+      params,
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  async bulkUpdateStatus(masterDataIds, status) {
+    const response = await api.patch('/master-data/bulk/status', {
+      masterDataIds,
+      status,
+    });
+    return response.data;
+  },
+
+  async bulkDeleteMasterData(masterDataIds) {
+    const response = await api.delete('/master-data/bulk', {
+      data: { masterDataIds },
+    });
+    return response.data;
+  },
+
+  async getMasterDataByKey(key) {
+    const response = await api.get(`/master-data/key/${key}`);
+    return response.data;
+  },
+
+  async getMasterDataByCategory(category, params = {}) {
+    const response = await api.get(`/master-data/category/${category}`, { params });
+    return response.data;
+  },
+
+  async validateJsonValue(value) {
+    const response = await api.post('/master-data/validate-json', { value });
+    return response.data;
+  },
 };
 
 export default masterDataService;

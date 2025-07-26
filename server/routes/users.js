@@ -26,7 +26,7 @@ router.get("/", authorizeRoles("Admin"), async (req, res) => {
 
     let query = `
       SELECT user_id, username, role, first_name, last_name, email, is_active, 
-             approval_status, rank, position, department, phone, created_at
+             approval_status, rank, position, department, phone, line_id, notes, created_at
       FROM users
       WHERE 1=1
     `;
@@ -122,7 +122,7 @@ router.get("/:id", authorizeRoles("Admin"), async (req, res) => {
     const { id } = req.params;
 
     const users = await executeQuery(
-      "SELECT user_id, username, role, first_name, last_name, email, is_active, approval_status, rank, position, department, phone, line_id, created_at FROM users WHERE user_id = ?",
+      "SELECT user_id, username, role, first_name, last_name, email, is_active, approval_status, rank, position, department, phone, line_id, notes, created_at FROM users WHERE user_id = ?",
       [id]
     );
 
@@ -286,6 +286,24 @@ router.put("/:id", authorizeRoles("Admin"), async (req, res) => {
       notes,
     } = req.body;
 
+    // Log the received data for debugging
+    console.log("Update user request for ID:", id);
+    console.log("Received data:", {
+      username,
+      role,
+      first_name,
+      last_name,
+      email,
+      is_active,
+      approval_status,
+      rank,
+      position,
+      department,
+      phone,
+      line_id,
+      notes,
+    });
+
     // Get current user data for audit log
     const currentUsers = await executeQuery(
       "SELECT * FROM users WHERE user_id = ?",
@@ -317,7 +335,7 @@ router.put("/:id", authorizeRoles("Admin"), async (req, res) => {
     }
 
     // Update user
-    await executeQuery(
+    const result = await executeQuery(
       `UPDATE users 
        SET username = ?, role = ?, first_name = ?, last_name = ?, email = ?, 
            is_active = ?, approval_status = ?, rank = ?, position = ?, 
@@ -340,6 +358,17 @@ router.put("/:id", authorizeRoles("Admin"), async (req, res) => {
         id,
       ]
     );
+
+    console.log("Update result:", result);
+    console.log("Rows affected:", result.affectedRows);
+    console.log("Updated notes value:", notes !== undefined ? notes : currentUser.notes);
+
+    // Verify the update by querying the database
+    const updatedUser = await executeQuery(
+      "SELECT notes FROM users WHERE user_id = ?",
+      [id]
+    );
+    console.log("Verified notes in database after update:", updatedUser[0]?.notes);
 
     // Log activity
     await logActivity(
@@ -560,6 +589,207 @@ router.delete("/:id", authorizeRoles("Admin"), async (req, res) => {
     });
   } catch (error) {
     logger.error("Delete user error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการลบผู้ใช้",
+    });
+  }
+});
+
+// @route   PATCH /api/users/bulk/status
+// @desc    Bulk update user status
+// @access  Private/Admin
+router.patch("/bulk/status", authorizeRoles("Admin"), async (req, res) => {
+  try {
+    const { userIds, is_active } = req.body;
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "กรุณาระบุรายการผู้ใช้ที่ต้องการอัปเดต",
+      });
+    }
+
+    if (typeof is_active !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: "สถานะการใช้งานไม่ถูกต้อง",
+      });
+    }
+
+    // Prevent changing own account status in bulk
+    if (userIds.includes(req.user.user_id)) {
+      return res.status(400).json({
+        success: false,
+        message: "ไม่สามารถเปลี่ยนสถานะบัญชีของตนเองได้",
+      });
+    }
+
+    // Update multiple users
+    const placeholders = userIds.map(() => '?').join(',');
+    const result = await executeQuery(
+      `UPDATE users SET is_active = ? WHERE user_id IN (${placeholders})`,
+      [is_active, ...userIds]
+    );
+
+    // Log activity for each user
+    for (const userId of userIds) {
+      await logActivity(
+        req.user.user_id,
+        "BULK_UPDATE",
+        "users",
+        userId,
+        {
+          field: "is_active",
+          new_value: is_active,
+          operation: "bulk_status_change"
+        },
+        req.ip
+      );
+    }
+
+    res.json({
+      success: true,
+      message: `อัปเดตสถานะ ${result.affectedRows} ผู้ใช้สำเร็จ`,
+      data: {
+        affected_rows: result.affectedRows,
+        updated_status: is_active
+      }
+    });
+  } catch (error) {
+    logger.error("Bulk update user status error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการอัปเดตสถานะผู้ใช้",
+    });
+  }
+});
+
+// @route   PATCH /api/users/bulk/approval
+// @desc    Bulk update user approval status
+// @access  Private/Admin
+router.patch("/bulk/approval", authorizeRoles("Admin"), async (req, res) => {
+  try {
+    const { userIds, approval_status } = req.body;
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "กรุณาระบุรายการผู้ใช้ที่ต้องการอัปเดต",
+      });
+    }
+
+    const validStatuses = ["pending", "approved", "rejected"];
+    if (!validStatuses.includes(approval_status)) {
+      return res.status(400).json({
+        success: false,
+        message: "สถานะการอนุมัติไม่ถูกต้อง",
+      });
+    }
+
+    // Update multiple users
+    const placeholders = userIds.map(() => '?').join(',');
+    const result = await executeQuery(
+      `UPDATE users SET approval_status = ? WHERE user_id IN (${placeholders})`,
+      [approval_status, ...userIds]
+    );
+
+    // Log activity for each user
+    for (const userId of userIds) {
+      await logActivity(
+        req.user.user_id,
+        "BULK_UPDATE",
+        "users",
+        userId,
+        {
+          field: "approval_status",
+          new_value: approval_status,
+          operation: "bulk_approval_change"
+        },
+        req.ip
+      );
+    }
+
+    res.json({
+      success: true,
+      message: `อัปเดตสถานะการอนุมัติ ${result.affectedRows} ผู้ใช้สำเร็จ`,
+      data: {
+        affected_rows: result.affectedRows,
+        updated_approval_status: approval_status
+      }
+    });
+  } catch (error) {
+    logger.error("Bulk update user approval status error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการอัปเดตสถานะการอนุมัติผู้ใช้",
+    });
+  }
+});
+
+// @route   DELETE /api/users/bulk
+// @desc    Bulk delete users
+// @access  Private/Admin
+router.delete("/bulk", authorizeRoles("Admin"), async (req, res) => {
+  try {
+    const { userIds } = req.body;
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "กรุณาระบุรายการผู้ใช้ที่ต้องการลบ",
+      });
+    }
+
+    // Prevent deleting own account
+    if (userIds.includes(req.user.user_id)) {
+      return res.status(400).json({
+        success: false,
+        message: "ไม่สามารถลบบัญชีของตนเองได้",
+      });
+    }
+
+    // Get user data before deletion for logging
+    const placeholders = userIds.map(() => '?').join(',');
+    const usersToDelete = await executeQuery(
+      `SELECT * FROM users WHERE user_id IN (${placeholders})`,
+      userIds
+    );
+
+    // Delete multiple users
+    const result = await executeQuery(
+      `DELETE FROM users WHERE user_id IN (${placeholders})`,
+      userIds
+    );
+
+    // Log activity for each deleted user
+    for (const user of usersToDelete) {
+      await logActivity(
+        req.user.user_id,
+        "BULK_DELETE",
+        "users",
+        user.user_id,
+        {
+          deleted_user: {
+            username: user.username,
+            email: user.email,
+            role: user.role
+          },
+          operation: "bulk_delete"
+        },
+        req.ip
+      );
+    }
+
+    res.json({
+      success: true,
+      message: `ลบ ${result.affectedRows} ผู้ใช้สำเร็จ`,
+      data: {
+        affected_rows: result.affectedRows
+      }
+    });
+  } catch (error) {
+    logger.error("Bulk delete users error:", error.message);
     res.status(500).json({
       success: false,
       message: "เกิดข้อผิดพลาดในการลบผู้ใช้",

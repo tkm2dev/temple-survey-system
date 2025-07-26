@@ -583,6 +583,9 @@ const loadUser = async () => {
     const response = await userService.getUser(userId);
     user.value = response.data;
 
+    console.log("Loaded user data:", user.value);
+    console.log("Notes field:", user.value.notes);
+
     // Populate form
     form.firstName = user.value.first_name;
     form.lastName = user.value.last_name;
@@ -597,6 +600,8 @@ const loadUser = async () => {
     form.lineId = user.value.line_id || "";
     form.department = user.value.department || "";
     form.approvalStatus = user.value.approval_status || "pending";
+
+    console.log("Form notes after loading:", form.notes);
   } catch (error) {
     console.error("Error loading user:", error);
     alert("เกิดข้อผิดพลาดในการโหลดข้อมูลผู้ใช้");
@@ -699,6 +704,9 @@ const handleSubmit = async () => {
       approval_status: form.approvalStatus,
     };
 
+    console.log("Sending userData:", userData);
+    console.log("Notes being sent:", userData.notes);
+
     // Add password if provided
     if (form.newPassword) {
       userData.password = form.newPassword;
@@ -706,18 +714,24 @@ const handleSubmit = async () => {
 
     await userService.updateUser(userId, userData);
 
-    // Show success message
-    alert("อัปเดตข้อมูลผู้ใช้สำเร็จ");
+    // Show success toast
+    showToast(`อัปเดตข้อมูลผู้ใช้ "${form.firstName} ${form.lastName}" สำเร็จ`, "success", 4000);
 
-    // Redirect to user list
-    router.push("/users");
+    // Reload user data to show updated information
+    await loadUser();
+    console.log("User data reloaded after update");
+
+    // Optional: Redirect to user list after delay (comment out if you want to stay on edit page)
+    setTimeout(() => {
+      router.push("/users");
+    }, 2000);
   } catch (error) {
     console.error("Error updating user:", error);
 
     if (error.response?.data?.message) {
-      alert(`เกิดข้อผิดพลาด: ${error.response.data.message}`);
+      showToast(`เกิดข้อผิดพลาด: ${error.response.data.message}`, "error", 5000);
     } else {
-      alert("เกิดข้อผิดพลาดในการอัปเดตข้อมูลผู้ใช้");
+      showToast("เกิดข้อผิดพลาดในการอัปเดตข้อมูลผู้ใช้", "error", 5000);
     }
   } finally {
     loading.value = false;
@@ -764,6 +778,57 @@ const getRoleText = (role) => {
     Surveyor: "ผู้สำรวจ",
   };
   return texts[role] || role;
+};
+
+// Toast notification system
+const showToast = (message, type = "info", duration = 4000) => {
+  // Create toast element
+  const toast = document.createElement("div");
+  toast.className = `toast-notification toast-${type}`;
+  
+  // Create toast content with icon
+  const icon = getToastIcon(type);
+  toast.innerHTML = `
+    <div class="toast-content">
+      <i class="${icon} me-2"></i>
+      <span class="toast-message">${message}</span>
+      <button type="button" class="toast-close" onclick="this.parentElement.parentElement.remove()">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+    <div class="toast-progress">
+      <div class="toast-progress-bar" style="animation-duration: ${duration}ms;"></div>
+    </div>
+  `;
+
+  // Add toast to document
+  document.body.appendChild(toast);
+
+  // Show toast with animation
+  setTimeout(() => {
+    toast.classList.add("show");
+  }, 100);
+
+  // Auto remove toast after duration
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => {
+      if (document.body.contains(toast)) {
+        document.body.removeChild(toast);
+      }
+    }, 300);
+  }, duration);
+};
+
+// Get icon for toast type
+const getToastIcon = (type) => {
+  const icons = {
+    success: "bi bi-check-circle-fill",
+    error: "bi bi-exclamation-triangle-fill",
+    warning: "bi bi-exclamation-circle-fill",
+    info: "bi bi-info-circle-fill"
+  };
+  return icons[type] || icons.info;
 };
 
 const formatDate = (dateString) => {
@@ -945,5 +1010,109 @@ textarea.form-control {
 
 .text-center small {
   font-weight: 400;
+}
+
+/* Toast Notifications */
+:global(.toast-notification) {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  min-width: 320px;
+  max-width: 400px;
+  border-radius: 0.5rem;
+  color: white;
+  font-weight: 500;
+  z-index: 9999;
+  transform: translateX(100%);
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+:global(.toast-notification.show) {
+  transform: translateX(0);
+}
+
+:global(.toast-notification .toast-content) {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  position: relative;
+}
+
+:global(.toast-notification .toast-content i) {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+:global(.toast-notification .toast-message) {
+  flex: 1;
+  margin-right: 0.5rem;
+}
+
+:global(.toast-notification .toast-close) {
+  background: none;
+  border: none;
+  color: currentColor;
+  padding: 0.25rem;
+  margin-left: auto;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+:global(.toast-notification .toast-close:hover) {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+:global(.toast-notification .toast-progress) {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+:global(.toast-notification .toast-progress-bar) {
+  height: 100%;
+  background: rgba(255, 255, 255, 0.5);
+  width: 100%;
+  transform-origin: left;
+  animation: toastProgress linear forwards;
+}
+
+@keyframes toastProgress {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+:global(.toast-success) {
+  background: linear-gradient(135deg, #198754, #20c997);
+  border-left: 4px solid #28a745;
+}
+
+:global(.toast-error) {
+  background: linear-gradient(135deg, #dc3545, #e74c3c);
+  border-left: 4px solid #dc3545;
+}
+
+:global(.toast-warning) {
+  background: linear-gradient(135deg, #fd7e14, #f39c12);
+  border-left: 4px solid #fd7e14;
+}
+
+:global(.toast-info) {
+  background: linear-gradient(135deg, #0d6efd, #3498db);
+  border-left: 4px solid #0d6efd;
 }
 </style>

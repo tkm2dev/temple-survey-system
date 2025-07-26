@@ -1,0 +1,31 @@
+{
+  "name": "temple-survey-system",
+  "version": "1.0.0",
+  "description": "Temple Survey System - Full Stack Application",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "npm run server & npm run client",
+    "server": "cd server && npm start",
+    "client": "cd client && npm run dev",
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "build": "cd client && npm run build",
+    "migrate": "node server/fix_database.js"
+  },
+  "keywords": [
+    "temple",
+    "survey",
+    "nodejs",
+    "vue",
+    "mysql"
+  ],
+  "author": "tkm2dev",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tkm2dev/temple-survey-system.git"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
