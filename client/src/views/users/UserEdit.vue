@@ -715,7 +715,11 @@ const handleSubmit = async () => {
     await userService.updateUser(userId, userData);
 
     // Show success toast
-    showToast(`อัปเดตข้อมูลผู้ใช้ "${form.firstName} ${form.lastName}" สำเร็จ`, "success", 4000);
+    showToast(
+      `อัปเดตข้อมูลผู้ใช้ "${form.firstName} ${form.lastName}" สำเร็จ`,
+      "success",
+      4000
+    );
 
     // Reload user data to show updated information
     await loadUser();
@@ -729,7 +733,11 @@ const handleSubmit = async () => {
     console.error("Error updating user:", error);
 
     if (error.response?.data?.message) {
-      showToast(`เกิดข้อผิดพลาด: ${error.response.data.message}`, "error", 5000);
+      showToast(
+        `เกิดข้อผิดพลาด: ${error.response.data.message}`,
+        "error",
+        5000
+      );
     } else {
       showToast("เกิดข้อผิดพลาดในการอัปเดตข้อมูลผู้ใช้", "error", 5000);
     }
@@ -785,7 +793,7 @@ const showToast = (message, type = "info", duration = 4000) => {
   // Create toast element
   const toast = document.createElement("div");
   toast.className = `toast-notification toast-${type}`;
-  
+
   // Create toast content with icon
   const icon = getToastIcon(type);
   toast.innerHTML = `
@@ -826,7 +834,7 @@ const getToastIcon = (type) => {
     success: "bi bi-check-circle-fill",
     error: "bi bi-exclamation-triangle-fill",
     warning: "bi bi-exclamation-circle-fill",
-    info: "bi bi-info-circle-fill"
+    info: "bi bi-info-circle-fill",
   };
   return icons[type] || icons.info;
 };
@@ -1092,8 +1100,12 @@ textarea.form-control {
 }
 
 @keyframes toastProgress {
-  from { transform: scaleX(1); }
-  to { transform: scaleX(0); }
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
 }
 
 :global(.toast-success) {

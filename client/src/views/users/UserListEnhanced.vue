@@ -209,7 +209,9 @@
           <div class="d-flex align-items-center">
             <div>
               <div class="fw-medium">
-                <span v-if="user.rank" class="text-muted me-1">{{ user.rank }}</span>
+                <span v-if="user.rank" class="text-muted me-1">{{
+                  user.rank
+                }}</span>
                 {{ user.first_name }} {{ user.last_name }}
               </div>
               <small class="text-muted">@{{ user.username }}</small>
@@ -246,7 +248,7 @@
             :class="{
               'bg-danger': user.role === 'Admin',
               'bg-warning': user.role === 'Reviewer',
-              'bg-info': user.role === 'Surveyor'
+              'bg-info': user.role === 'Surveyor',
             }"
           >
             {{ getRoleText(user.role) }}
@@ -262,8 +264,11 @@
               @change="toggleUserStatus(user)"
             />
             <label class="form-check-label" :for="`status-${user.user_id}`">
-              <span class="badge" :class="user.is_active ? 'bg-success' : 'bg-secondary'">
-                {{ user.is_active ? 'ใช้งาน' : 'ปิดใช้งาน' }}
+              <span
+                class="badge"
+                :class="user.is_active ? 'bg-success' : 'bg-secondary'"
+              >
+                {{ user.is_active ? "ใช้งาน" : "ปิดใช้งาน" }}
               </span>
             </label>
           </div>
@@ -274,7 +279,7 @@
             :class="{
               'bg-success': user.approval_status === 'approved',
               'bg-warning': user.approval_status === 'pending',
-              'bg-danger': user.approval_status === 'rejected'
+              'bg-danger': user.approval_status === 'rejected',
             }"
           >
             {{ getApprovalStatusText(user.approval_status) }}
@@ -339,7 +344,7 @@
                   ปิดใช้งาน
                 </button>
               </li>
-              <li><hr class="dropdown-divider"></li>
+              <li><hr class="dropdown-divider" /></li>
               <li>
                 <button
                   class="dropdown-item"
@@ -372,7 +377,10 @@
     </EnhancedDataTable>
 
     <!-- Toast Container -->
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055">
+    <div
+      class="toast-container position-fixed top-0 end-0 p-3"
+      style="z-index: 1055"
+    >
       <div
         v-for="toast in toasts"
         :key="toast.id"
@@ -448,84 +456,87 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
-import userService from '@/services/userService'
-import EnhancedDataTable from '@/components/common/EnhancedDataTable.vue'
+import { ref, reactive, computed, onMounted, nextTick } from "vue";
+import { useRouter } from "vue-router";
+import userService from "@/services/userService";
+import EnhancedDataTable from "@/components/common/EnhancedDataTable.vue";
 
 export default {
-  name: 'UserList',
+  name: "UserList",
   components: {
-    EnhancedDataTable
+    EnhancedDataTable,
   },
   setup() {
-    const router = useRouter()
-    
+    const router = useRouter();
+
     // Reactive data
-    const loading = ref(false)
-    const users = ref([])
-    const searchQuery = ref('')
-    const selectedRole = ref('')
-    const selectedStatus = ref('')
-    const selectedDepartment = ref('')
-    const selectedApprovalStatus = ref('')
-    const currentPage = ref(1)
-    const totalPages = ref(1)
-    const totalUsers = ref(0)
-    const itemsPerPage = ref(20)
-    const toasts = ref([])
-    const confirmationTitle = ref('')
-    const confirmationMessage = ref('')
-    const confirmationBtnText = ref('')
-    const confirmationBtnClass = ref('')
-    const confirmedAction = ref(null)
-    const selectedUsers = ref([])
+    const loading = ref(false);
+    const users = ref([]);
+    const searchQuery = ref("");
+    const selectedRole = ref("");
+    const selectedStatus = ref("");
+    const selectedDepartment = ref("");
+    const selectedApprovalStatus = ref("");
+    const currentPage = ref(1);
+    const totalPages = ref(1);
+    const totalUsers = ref(0);
+    const itemsPerPage = ref(20);
+    const toasts = ref([]);
+    const confirmationTitle = ref("");
+    const confirmationMessage = ref("");
+    const confirmationBtnText = ref("");
+    const confirmationBtnClass = ref("");
+    const confirmedAction = ref(null);
+    const selectedUsers = ref([]);
 
     // Computed properties
     const uniqueDepartments = computed(() => {
       const departments = users.value
         .map((user) => user.department)
-        .filter((dept) => dept && dept.trim() !== "")
-      return [...new Set(departments)].sort()
-    })
+        .filter((dept) => dept && dept.trim() !== "");
+      return [...new Set(departments)].sort();
+    });
 
     const activeUsers = computed(() => {
-      return users.value.filter((user) => user.is_active).length
-    })
+      return users.value.filter((user) => user.is_active).length;
+    });
 
     const inactiveUsers = computed(() => {
-      return users.value.filter((user) => !user.is_active).length
-    })
+      return users.value.filter((user) => !user.is_active).length;
+    });
 
     const adminUsers = computed(() => {
-      return users.value.filter((user) => user.role === 'Admin').length
-    })
+      return users.value.filter((user) => user.role === "Admin").length;
+    });
 
     const reviewerUsers = computed(() => {
-      return users.value.filter((user) => user.role === 'Reviewer').length
-    })
+      return users.value.filter((user) => user.role === "Reviewer").length;
+    });
 
     const surveyorUsers = computed(() => {
-      return users.value.filter((user) => user.role === 'Surveyor').length
-    })
+      return users.value.filter((user) => user.role === "Surveyor").length;
+    });
 
     const pendingUsers = computed(() => {
-      return users.value.filter((user) => user.approval_status === 'pending').length
-    })
+      return users.value.filter((user) => user.approval_status === "pending")
+        .length;
+    });
 
     const approvedUsers = computed(() => {
-      return users.value.filter((user) => user.approval_status === 'approved').length
-    })
+      return users.value.filter((user) => user.approval_status === "approved")
+        .length;
+    });
 
     const rejectedUsers = computed(() => {
-      return users.value.filter((user) => user.approval_status === 'rejected').length
-    })
+      return users.value.filter((user) => user.approval_status === "rejected")
+        .length;
+    });
 
     // Methods
     const loadUsers = async () => {
       try {
-        loading.value = true
-        
+        loading.value = true;
+
         const params = {
           page: currentPage.value,
           limit: itemsPerPage.value,
@@ -534,324 +545,354 @@ export default {
           status: selectedStatus.value,
           approvalStatus: selectedApprovalStatus.value,
           department: selectedDepartment.value,
-        }
+        };
 
-        const response = await userService.getUsers(params)
-        
+        const response = await userService.getUsers(params);
+
         if (response.success || response.data) {
-          const userData = response.data || response
-          users.value = userData.users || userData || []
-          totalPages.value = userData.pagination?.totalPages || Math.ceil((userData.total || users.value.length) / itemsPerPage.value) || 1
-          totalUsers.value = userData.pagination?.totalRecords || userData.total || users.value.length
+          const userData = response.data || response;
+          users.value = userData.users || userData || [];
+          totalPages.value =
+            userData.pagination?.totalPages ||
+            Math.ceil(
+              (userData.total || users.value.length) / itemsPerPage.value
+            ) ||
+            1;
+          totalUsers.value =
+            userData.pagination?.totalRecords ||
+            userData.total ||
+            users.value.length;
 
           // Ensure all users have valid IDs
           users.value = users.value.map((user, index) => {
             if (!user.user_id) {
-              user.user_id = user.id || `temp_${index}_${Date.now()}`
+              user.user_id = user.id || `temp_${index}_${Date.now()}`;
             }
-            return user
-          })
+            return user;
+          });
         }
       } catch (error) {
-        console.error('Error loading users:', error)
-        showToast('เกิดข้อผิดพลาดในการโหลดข้อมูลผู้ใช้', 'error')
+        console.error("Error loading users:", error);
+        showToast("เกิดข้อผิดพลาดในการโหลดข้อมูลผู้ใช้", "error");
       } finally {
-        loading.value = false
+        loading.value = false;
       }
-    }
+    };
 
     const changePage = (page) => {
-      currentPage.value = page
-      loadUsers()
-    }
+      currentPage.value = page;
+      loadUsers();
+    };
 
     const updateItemsPerPage = (newItemsPerPage) => {
-      itemsPerPage.value = newItemsPerPage
-      currentPage.value = 1
-      loadUsers()
-    }
+      itemsPerPage.value = newItemsPerPage;
+      currentPage.value = 1;
+      loadUsers();
+    };
 
     const handleSearch = () => {
-      currentPage.value = 1
-      loadUsers()
-    }
+      currentPage.value = 1;
+      loadUsers();
+    };
 
     const handleFilter = () => {
-      currentPage.value = 1
-      loadUsers()
-    }
+      currentPage.value = 1;
+      loadUsers();
+    };
 
     const clearSearch = () => {
-      searchQuery.value = ''
-      handleSearch()
-    }
+      searchQuery.value = "";
+      handleSearch();
+    };
 
     const refreshUsers = () => {
-      loadUsers()
-    }
+      loadUsers();
+    };
 
     const toggleUserStatus = async (user) => {
       try {
-        const newStatus = !user.is_active
-        await userService.updateUserStatus(user.user_id, { is_active: newStatus })
-        user.is_active = newStatus
+        const newStatus = !user.is_active;
+        await userService.updateUserStatus(user.user_id, {
+          is_active: newStatus,
+        });
+        user.is_active = newStatus;
         showToast(
-          `${newStatus ? 'เปิด' : 'ปิด'}ใช้งานผู้ใช้ "${user.first_name} ${user.last_name}" สำเร็จ`,
-          'success'
-        )
+          `${newStatus ? "เปิด" : "ปิด"}ใช้งานผู้ใช้ "${user.first_name} ${
+            user.last_name
+          }" สำเร็จ`,
+          "success"
+        );
       } catch (error) {
-        console.error('Error toggling user status:', error)
-        showToast('เกิดข้อผิดพลาดในการเปลี่ยนสถานะผู้ใช้', 'error')
+        console.error("Error toggling user status:", error);
+        showToast("เกิดข้อผิดพลาดในการเปลี่ยนสถานะผู้ใช้", "error");
       }
-    }
+    };
 
     const showDeleteConfirmation = (user) => {
-      confirmationTitle.value = 'ยืนยันการลบผู้ใช้'
-      confirmationMessage.value = `คุณต้องการลบผู้ใช้ "${user.first_name} ${user.last_name}" หรือไม่?`
-      confirmationBtnText.value = 'ลบ'
-      confirmationBtnClass.value = 'btn-danger'
-      confirmedAction.value = () => deleteUser(user)
-      showConfirmationModal()
-    }
+      confirmationTitle.value = "ยืนยันการลบผู้ใช้";
+      confirmationMessage.value = `คุณต้องการลบผู้ใช้ "${user.first_name} ${user.last_name}" หรือไม่?`;
+      confirmationBtnText.value = "ลบ";
+      confirmationBtnClass.value = "btn-danger";
+      confirmedAction.value = () => deleteUser(user);
+      showConfirmationModal();
+    };
 
     const deleteUser = async (user) => {
       try {
-        await userService.deleteUser(user.user_id)
-        users.value = users.value.filter(u => u.user_id !== user.user_id)
-        totalUsers.value--
-        showToast(`ลบผู้ใช้ "${user.first_name} ${user.last_name}" สำเร็จ`, 'success')
-        hideConfirmationModal()
+        await userService.deleteUser(user.user_id);
+        users.value = users.value.filter((u) => u.user_id !== user.user_id);
+        totalUsers.value--;
+        showToast(
+          `ลบผู้ใช้ "${user.first_name} ${user.last_name}" สำเร็จ`,
+          "success"
+        );
+        hideConfirmationModal();
       } catch (error) {
-        console.error('Error deleting user:', error)
-        showToast('เกิดข้อผิดพลาดในการลบผู้ใช้', 'error')
+        console.error("Error deleting user:", error);
+        showToast("เกิดข้อผิดพลาดในการลบผู้ใช้", "error");
       }
-    }
+    };
 
     const handleBulkEdit = (items) => {
       // TODO: Implement bulk edit functionality
-      showToast(`เลือกแก้ไข ${items.length} รายการ`, 'info')
-    }
+      showToast(`เลือกแก้ไข ${items.length} รายการ`, "info");
+    };
 
     const handleBulkStatusChange = async (items, status) => {
       try {
-        const promises = items.map(user => 
+        const promises = items.map((user) =>
           userService.updateUserStatus(user.user_id, { is_active: status })
-        )
-        await Promise.all(promises)
-        
+        );
+        await Promise.all(promises);
+
         // Update local data
-        items.forEach(user => {
-          const localUser = users.value.find(u => u.user_id === user.user_id)
+        items.forEach((user) => {
+          const localUser = users.value.find((u) => u.user_id === user.user_id);
           if (localUser) {
-            localUser.is_active = status
+            localUser.is_active = status;
           }
-        })
-        
+        });
+
         showToast(
-          `${status ? 'เปิด' : 'ปิด'}ใช้งาน ${items.length} ผู้ใช้สำเร็จ`,
-          'success'
-        )
+          `${status ? "เปิด" : "ปิด"}ใช้งาน ${items.length} ผู้ใช้สำเร็จ`,
+          "success"
+        );
       } catch (error) {
-        console.error('Error bulk status change:', error)
-        showToast('เกิดข้อผิดพลาดในการเปลี่ยนสถานะผู้ใช้', 'error')
+        console.error("Error bulk status change:", error);
+        showToast("เกิดข้อผิดพลาดในการเปลี่ยนสถานะผู้ใช้", "error");
       }
-    }
+    };
 
     const handleBulkApprovalChange = async (items, status) => {
       try {
-        const promises = items.map(user => 
-          userService.updateUserApproval(user.user_id, { approval_status: status })
-        )
-        await Promise.all(promises)
-        
+        const promises = items.map((user) =>
+          userService.updateUserApproval(user.user_id, {
+            approval_status: status,
+          })
+        );
+        await Promise.all(promises);
+
         // Update local data
-        items.forEach(user => {
-          const localUser = users.value.find(u => u.user_id === user.user_id)
+        items.forEach((user) => {
+          const localUser = users.value.find((u) => u.user_id === user.user_id);
           if (localUser) {
-            localUser.approval_status = status
+            localUser.approval_status = status;
           }
-        })
-        
-        showToast(`${getApprovalStatusText(status)} ${items.length} ผู้ใช้สำเร็จ`, 'success')
+        });
+
+        showToast(
+          `${getApprovalStatusText(status)} ${items.length} ผู้ใช้สำเร็จ`,
+          "success"
+        );
       } catch (error) {
-        console.error('Error bulk approval change:', error)
-        showToast('เกิดข้อผิดพลาดในการเปลี่ยนสถานะการอนุมัติ', 'error')
+        console.error("Error bulk approval change:", error);
+        showToast("เกิดข้อผิดพลาดในการเปลี่ยนสถานะการอนุมัติ", "error");
       }
-    }
+    };
 
     const handleBulkDelete = (items) => {
-      confirmationTitle.value = 'ยืนยันการลบผู้ใช้หลายรายการ'
-      confirmationMessage.value = `คุณต้องการลบผู้ใช้ ${items.length} รายการหรือไม่?`
-      confirmationBtnText.value = 'ลบทั้งหมด'
-      confirmationBtnClass.value = 'btn-danger'
-      confirmedAction.value = () => bulkDeleteUsers(items)
-      showConfirmationModal()
-    }
+      confirmationTitle.value = "ยืนยันการลบผู้ใช้หลายรายการ";
+      confirmationMessage.value = `คุณต้องการลบผู้ใช้ ${items.length} รายการหรือไม่?`;
+      confirmationBtnText.value = "ลบทั้งหมด";
+      confirmationBtnClass.value = "btn-danger";
+      confirmedAction.value = () => bulkDeleteUsers(items);
+      showConfirmationModal();
+    };
 
     const bulkDeleteUsers = async (items) => {
       try {
-        const promises = items.map(user => userService.deleteUser(user.user_id))
-        await Promise.all(promises)
-        
-        const deletedIds = items.map(user => user.user_id)
-        users.value = users.value.filter(user => !deletedIds.includes(user.user_id))
-        totalUsers.value -= items.length
-        
-        showToast(`ลบ ${items.length} ผู้ใช้สำเร็จ`, 'success')
-        hideConfirmationModal()
+        const promises = items.map((user) =>
+          userService.deleteUser(user.user_id)
+        );
+        await Promise.all(promises);
+
+        const deletedIds = items.map((user) => user.user_id);
+        users.value = users.value.filter(
+          (user) => !deletedIds.includes(user.user_id)
+        );
+        totalUsers.value -= items.length;
+
+        showToast(`ลบ ${items.length} ผู้ใช้สำเร็จ`, "success");
+        hideConfirmationModal();
       } catch (error) {
-        console.error('Error bulk deleting users:', error)
-        showToast('เกิดข้อผิดพลาดในการลบผู้ใช้', 'error')
+        console.error("Error bulk deleting users:", error);
+        showToast("เกิดข้อผิดพลาดในการลบผู้ใช้", "error");
       }
-    }
+    };
 
     const handleSelectionChange = (selected) => {
-      selectedUsers.value = selected
-    }
+      selectedUsers.value = selected;
+    };
 
     // Helper methods
     const getRoleText = (role) => {
       const roleMap = {
-        'Admin': 'ผู้ดูแล',
-        'Reviewer': 'ผู้ตรวจ',
-        'Surveyor': 'ผู้สำรวจ'
-      }
-      return roleMap[role] || role
-    }
+        Admin: "ผู้ดูแล",
+        Reviewer: "ผู้ตรวจ",
+        Surveyor: "ผู้สำรวจ",
+      };
+      return roleMap[role] || role;
+    };
 
     const getApprovalStatusText = (status) => {
       const statusMap = {
-        'pending': 'รออนุมัติ',
-        'approved': 'อนุมัติแล้ว',
-        'rejected': 'ปฏิเสธ'
-      }
-      return statusMap[status] || status
-    }
+        pending: "รออนุมัติ",
+        approved: "อนุมัติแล้ว",
+        rejected: "ปฏิเสธ",
+      };
+      return statusMap[status] || status;
+    };
 
     const getInitials = (firstName, lastName) => {
-      const first = firstName ? firstName.charAt(0).toUpperCase() : ''
-      const last = lastName ? lastName.charAt(0).toUpperCase() : ''
-      return first + last
-    }
+      const first = firstName ? firstName.charAt(0).toUpperCase() : "";
+      const last = lastName ? lastName.charAt(0).toUpperCase() : "";
+      return first + last;
+    };
 
     const getProfileImageUrl = (imagePath) => {
-      return `${import.meta.env.VITE_API_BASE_URL}/uploads/profiles/${imagePath}`
-    }
+      return `${
+        import.meta.env.VITE_API_BASE_URL
+      }/uploads/profiles/${imagePath}`;
+    };
 
     const handleImageError = (event) => {
-      event.target.style.display = 'none'
-    }
+      event.target.style.display = "none";
+    };
 
     // Toast methods
-    const showToast = (message, type = 'info', duration = 4000) => {
-      const id = Date.now()
+    const showToast = (message, type = "info", duration = 4000) => {
+      const id = Date.now();
       const toast = {
         id,
         message,
         type,
         duration,
         progress: 100,
-        isPaused: false
-      }
-      
-      toasts.value.push(toast)
-      
+        isPaused: false,
+      };
+
+      toasts.value.push(toast);
+
       const updateProgress = () => {
         if (!toast.isPaused && toast.progress > 0) {
-          toast.progress -= (100 / duration) * 100
-          setTimeout(updateProgress, 100)
+          toast.progress -= (100 / duration) * 100;
+          setTimeout(updateProgress, 100);
         } else if (toast.progress <= 0) {
-          removeToast(id)
+          removeToast(id);
         }
-      }
-      
-      setTimeout(updateProgress, 100)
-    }
+      };
+
+      setTimeout(updateProgress, 100);
+    };
 
     const removeToast = (id) => {
-      const index = toasts.value.findIndex(toast => toast.id === id)
+      const index = toasts.value.findIndex((toast) => toast.id === id);
       if (index > -1) {
-        toasts.value.splice(index, 1)
+        toasts.value.splice(index, 1);
       }
-    }
+    };
 
     const pauseToast = (id) => {
-      const toast = toasts.value.find(t => t.id === id)
+      const toast = toasts.value.find((t) => t.id === id);
       if (toast) {
-        toast.isPaused = true
+        toast.isPaused = true;
       }
-    }
+    };
 
     const resumeToast = (id) => {
-      const toast = toasts.value.find(t => t.id === id)
+      const toast = toasts.value.find((t) => t.id === id);
       if (toast) {
-        toast.isPaused = false
+        toast.isPaused = false;
       }
-    }
+    };
 
     const getToastClass = (type) => {
       const classes = {
-        'success': 'border-success',
-        'error': 'border-danger',
-        'warning': 'border-warning',
-        'info': 'border-info'
-      }
-      return classes[type] || 'border-info'
-    }
+        success: "border-success",
+        error: "border-danger",
+        warning: "border-warning",
+        info: "border-info",
+      };
+      return classes[type] || "border-info";
+    };
 
     const getToastIcon = (type) => {
       const icons = {
-        'success': 'bi bi-check-circle-fill text-success',
-        'error': 'bi bi-exclamation-triangle-fill text-danger',
-        'warning': 'bi bi-exclamation-triangle-fill text-warning',
-        'info': 'bi bi-info-circle-fill text-info'
-      }
-      return icons[type] || 'bi bi-info-circle-fill text-info'
-    }
+        success: "bi bi-check-circle-fill text-success",
+        error: "bi bi-exclamation-triangle-fill text-danger",
+        warning: "bi bi-exclamation-triangle-fill text-warning",
+        info: "bi bi-info-circle-fill text-info",
+      };
+      return icons[type] || "bi bi-info-circle-fill text-info";
+    };
 
     const getToastTitle = (type) => {
       const titles = {
-        'success': 'สำเร็จ',
-        'error': 'ผิดพลาด',
-        'warning': 'คำเตือน',
-        'info': 'ข้อมูล'
-      }
-      return titles[type] || 'ข้อมูล'
-    }
+        success: "สำเร็จ",
+        error: "ผิดพลาด",
+        warning: "คำเตือน",
+        info: "ข้อมูล",
+      };
+      return titles[type] || "ข้อมูล";
+    };
 
     const getProgressBarClass = (type) => {
       const classes = {
-        'success': 'bg-success',
-        'error': 'bg-danger',
-        'warning': 'bg-warning',
-        'info': 'bg-info'
-      }
-      return classes[type] || 'bg-info'
-    }
+        success: "bg-success",
+        error: "bg-danger",
+        warning: "bg-warning",
+        info: "bg-info",
+      };
+      return classes[type] || "bg-info";
+    };
 
     // Modal methods
     const showConfirmationModal = () => {
-      const modal = new bootstrap.Modal(document.getElementById('confirmationModal'))
-      modal.show()
-    }
+      const modal = new bootstrap.Modal(
+        document.getElementById("confirmationModal")
+      );
+      modal.show();
+    };
 
     const hideConfirmationModal = () => {
-      const modal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'))
+      const modal = bootstrap.Modal.getInstance(
+        document.getElementById("confirmationModal")
+      );
       if (modal) {
-        modal.hide()
+        modal.hide();
       }
-    }
+    };
 
     const executeConfirmedAction = () => {
       if (confirmedAction.value) {
-        confirmedAction.value()
+        confirmedAction.value();
       }
-    }
+    };
 
     // Lifecycle
     onMounted(() => {
-      loadUsers()
-    })
+      loadUsers();
+    });
 
     return {
       // Data
@@ -872,7 +913,7 @@ export default {
       confirmationBtnText,
       confirmationBtnClass,
       selectedUsers,
-      
+
       // Computed
       uniqueDepartments,
       activeUsers,
@@ -883,7 +924,7 @@ export default {
       pendingUsers,
       approvedUsers,
       rejectedUsers,
-      
+
       // Methods
       loadUsers,
       changePage,
@@ -913,10 +954,10 @@ export default {
       getToastIcon,
       getToastTitle,
       getProgressBarClass,
-      executeConfirmedAction
-    }
-  }
-}
+      executeConfirmedAction,
+    };
+  },
+};
 </script>
 
 <style scoped>
@@ -929,7 +970,7 @@ export default {
   background: white;
   border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 1.5rem;
 }
 
@@ -1015,7 +1056,7 @@ export default {
 
 .toast-progress {
   height: 3px;
-  background: rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
 }
@@ -1029,11 +1070,11 @@ export default {
   .stats-row {
     justify-content: center;
   }
-  
+
   .stat-separator {
     display: none;
   }
-  
+
   .user-header .d-flex {
     flex-direction: column;
     gap: 1rem;
@@ -1044,11 +1085,11 @@ export default {
   .stats-row {
     gap: 0.5rem;
   }
-  
+
   .stat-number {
     font-size: 1.25rem;
   }
-  
+
   .stat-label {
     font-size: 0.7rem;
   }
