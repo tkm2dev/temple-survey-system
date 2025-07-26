@@ -14,15 +14,22 @@ export const authService = {
     return response.data;
   },
 
-  // Refresh token
-  async refreshToken() {
-    const response = await api.post("/auth/refresh");
+  // Change password
+  async changePassword(passwordData) {
+    const response = await api.post("/auth/change-password", passwordData);
     return response.data;
   },
 
   // Logout
   async logout() {
-    await api.post("/auth/logout");
+    const response = await api.post("/auth/logout");
+    return response.data;
+  },
+
+  // Register new user (Admin only)
+  async register(userData) {
+    const response = await api.post("/auth/register", userData);
+    return response.data;
   },
 };
 

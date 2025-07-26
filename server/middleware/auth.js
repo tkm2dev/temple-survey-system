@@ -5,61 +5,86 @@ const logger = require("../utils/logger");
 // Verify JWT token
 const authenticateToken = async (req, res, next) => {
   try {
+    console.log(`🔐 [AUTH MIDDLEWARE] Checking authentication for ${req.method} ${req.path}`);
+    
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
 
     if (!token) {
+      console.log(`❌ [AUTH MIDDLEWARE] No token provided`);
       return res.status(401).json({
         success: false,
-        message: "Access token required",
+        message: "กรุณาเข้าสู่ระบบก่อนใช้งาน",
       });
     }
 
+    console.log(`🔍 [AUTH MIDDLEWARE] Verifying token...`);
+    
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log(`👤 [AUTH MIDDLEWARE] Token valid for user: ${decoded.username}`);
 
-    // Get user from database
-    const user = await executeQuery(
-      "SELECT user_id, username, role, first_name, last_name, email, is_active FROM users WHERE user_id = ?",
+    // Get fresh user data from database
+    const users = await executeQuery(
+      `SELECT user_id, username, role, first_name, last_name, email, 
+              is_active, approval_status FROM users WHERE user_id = ?`,
       [decoded.userId]
     );
 
-    if (!user || user.length === 0) {
+    if (!users || users.length === 0) {
+      console.log(`❌ [AUTH MIDDLEWARE] User not found in database: ${decoded.userId}`);
       return res.status(401).json({
         success: false,
-        message: "Invalid token - user not found",
+        message: "ผู้ใช้ไม่มีในระบบ",
       });
     }
 
-    if (!user[0].is_active) {
+    const user = users[0];
+
+    // Check if user is still active
+    if (!user.is_active) {
+      console.log(`❌ [AUTH MIDDLEWARE] User account disabled: ${user.username}`);
       return res.status(401).json({
         success: false,
-        message: "Account is deactivated",
+        message: "บัญชีถูกปิดการใช้งาน",
       });
     }
 
-    req.user = user[0];
+    // Check approval status
+    if (user.approval_status !== "approved") {
+      console.log(`❌ [AUTH MIDDLEWARE] User not approved: ${user.username}, Status: ${user.approval_status}`);
+      return res.status(401).json({
+        success: false,
+        message: "บัญชียังไม่ได้รับการอนุมัติ",
+      });
+    }
+
+    console.log(`✅ [AUTH MIDDLEWARE] Authentication successful for user: ${user.username}`);
+
+    // Add user info to request object
+    req.user = user;
     next();
   } catch (error) {
+    console.error(`💥 [AUTH MIDDLEWARE] Error: ${error.message}`);
     logger.error("Authentication error:", error.message);
 
     if (error.name === "JsonWebTokenError") {
       return res.status(401).json({
         success: false,
-        message: "Invalid token",
+        message: "Token ไม่ถูกต้อง",
       });
     }
 
     if (error.name === "TokenExpiredError") {
       return res.status(401).json({
         success: false,
-        message: "Token expired",
+        message: "Token หมดอายุ กรุณาเข้าสู่ระบบใหม่",
       });
     }
 
     return res.status(500).json({
       success: false,
-      message: "Authentication server error",
+      message: "เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์",
     });
   }
 };

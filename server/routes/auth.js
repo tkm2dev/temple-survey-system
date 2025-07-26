@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const { executeQuery } = require("../config/database");
 const { logActivity } = require("../utils/auditLogger");
 const logger = require("../utils/logger");
+const { authenticateToken } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -182,21 +183,166 @@ router.post("/register", async (req, res) => {
 // @route   POST /api/auth/change-password
 // @desc    Change user password
 // @access  Private
-router.post("/change-password", async (req, res) => {
+router.post("/change-password", authenticateToken, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
+    const userId = req.user.user_id;
 
-    // This would need authentication middleware
-    // For now, return method not implemented
-    res.status(501).json({
-      success: false,
-      message: "ฟังก์ชันนี้ยังไม่พร้อมใช้งาน",
+    console.log(`🔑 [CHANGE PASSWORD] User ${req.user.username} requesting password change`);
+
+    // Validation
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "กรุณากรอกรหัสผ่านปัจจุบันและรหัสผ่านใหม่",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร",
+      });
+    }
+
+    // Get current password hash
+    const users = await executeQuery(
+      "SELECT password_hash FROM users WHERE user_id = ?",
+      [userId]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "ไม่พบข้อมูลผู้ใช้",
+      });
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      users[0].password_hash
+    );
+
+    if (!isCurrentPasswordValid) {
+      console.log(`❌ [CHANGE PASSWORD] Invalid current password for user: ${req.user.username}`);
+      return res.status(400).json({
+        success: false,
+        message: "รหัสผ่านปัจจุบันไม่ถูกต้อง",
+      });
+    }
+
+    // Hash new password
+    const saltRounds = 10;
+    const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
+
+    // Update password
+    await executeQuery(
+      "UPDATE users SET password_hash = ?, updated_at = NOW() WHERE user_id = ?",
+      [newPasswordHash, userId]
+    );
+
+    // Log activity
+    await logActivity(
+      userId,
+      "PASSWORD_CHANGE",
+      null,
+      null,
+      { action: "Password changed successfully" },
+      req.ip
+    );
+
+    console.log(`✅ [CHANGE PASSWORD] Password changed successfully for user: ${req.user.username}`);
+
+    res.json({
+      success: true,
+      message: "เปลี่ยนรหัสผ่านสำเร็จ",
     });
   } catch (error) {
+    console.error(`💥 [CHANGE PASSWORD] Error: ${error.message}`);
     logger.error("Password change error:", error.message);
     res.status(500).json({
       success: false,
       message: "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน",
+    });
+  }
+});
+
+// @route   GET /api/auth/me
+// @desc    Get current user information
+// @access  Private
+router.get("/me", authenticateToken, async (req, res) => {
+  try {
+    console.log(`👤 [GET PROFILE] User ${req.user.username} requesting profile info`);
+
+    // Get fresh user data (already done in middleware, but get complete info)
+    const users = await executeQuery(
+      `SELECT user_id, username, role, first_name, last_name, email, 
+              phone_number, line_id, rank_position, job_position, agency,
+              is_active, approval_status, created_at, updated_at 
+       FROM users WHERE user_id = ?`,
+      [req.user.user_id]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "ไม่พบข้อมูลผู้ใช้",
+      });
+    }
+
+    const user = users[0];
+    console.log(`✅ [GET PROFILE] Profile data retrieved for user: ${user.username}`);
+
+    res.json({
+      success: true,
+      message: "ดึงข้อมูลผู้ใช้สำเร็จ",
+      data: {
+        user: user,
+      },
+    });
+  } catch (error) {
+    console.error(`💥 [GET PROFILE] Error: ${error.message}`);
+    logger.error("Get profile error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้",
+    });
+  }
+});
+
+// @route   POST /api/auth/logout
+// @desc    Logout user (mainly for logging purposes)
+// @access  Private
+router.post("/logout", authenticateToken, async (req, res) => {
+  try {
+    console.log(`👋 [LOGOUT] User ${req.user.username} logging out`);
+
+    // Log logout activity
+    await logActivity(
+      req.user.user_id,
+      "LOGOUT",
+      null,
+      null,
+      {
+        logout_time: new Date(),
+        user_agent: req.headers["user-agent"],
+      },
+      req.ip
+    );
+
+    console.log(`✅ [LOGOUT] User ${req.user.username} logged out successfully`);
+
+    res.json({
+      success: true,
+      message: "ออกจากระบบสำเร็จ",
+    });
+  } catch (error) {
+    console.error(`💥 [LOGOUT] Error: ${error.message}`);
+    logger.error("Logout error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการออกจากระบบ",
     });
   }
 });
