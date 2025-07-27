@@ -1,35 +1,6 @@
 <template>
   <div class="auth-layout">
-    <div class="auth-background">
-      <div class="container-fluid">
-        <div class="row justify-content-center align-items-center min-vh-100">
-          <div class="col-12 col-md-6 col-lg-4">
-            <div class="auth-card">
-              <div class="text-center mb-4">
-                <div class="auth-logo mb-3">
-                  <i
-                    class="bi bi-building text-primary"
-                    style="font-size: 3rem"
-                  ></i>
-                </div>
-                <h2 class="text-primary-custom fw-bold">
-                  ระบบสำรวจข้อมูลภาคสนาม
-                </h2>
-                <p class="text-muted">Field Survey Data Collection System</p>
-              </div>
-
-              <router-view />
-
-              <div class="text-center mt-4">
-                <small class="text-muted">
-                  © 2025 Government Agency. All rights reserved.
-                </small>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <router-view />
   </div>
 </template>
 

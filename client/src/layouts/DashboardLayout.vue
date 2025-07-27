@@ -30,7 +30,7 @@
           <!-- Brand -->
           <router-link to="/" class="header-brand">
             <i class="bi bi-building me-2"></i>
-            <span class="d-none d-sm-inline">ระบบสำรวจข้อมูลภาคสนาม</span>
+            <span class="d-none d-sm-inline">ระบบสำรวจข้อมูลวัด</span>
           </router-link>
         </div>
 
@@ -196,10 +196,32 @@
 
           <!-- User Management (Admin only) -->
           <li v-if="authStore.hasRole('Admin')" class="nav-item">
-            <router-link to="/users" class="nav-link" active-class="active">
-              <i class="bi bi-people"></i>
-              <span>จัดการผู้ใช้งาน</span>
-            </router-link>
+            <div class="nav-group">
+              <router-link to="/users" class="nav-link" active-class="active">
+                <i class="bi bi-people"></i>
+                <span>จัดการผู้ใช้งาน</span>
+              </router-link>
+
+              <!-- Pending Users Submenu -->
+              <ul class="nav-submenu">
+                <li class="nav-item">
+                  <router-link
+                    to="/users/pending"
+                    class="nav-link nav-sublink"
+                    active-class="active"
+                  >
+                    <i class="bi bi-clock-history"></i>
+                    <span>รออนุมัติ</span>
+                    <span
+                      v-if="pendingUsersCount > 0"
+                      class="badge bg-warning text-dark ms-auto"
+                    >
+                      {{ pendingUsersCount }}
+                    </span>
+                  </router-link>
+                </li>
+              </ul>
+            </div>
           </li>
 
           <!-- Master Data (Admin only) -->
@@ -275,10 +297,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from "vue";
+import { ref, onMounted, onUnmounted, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useNotificationStore } from "@/stores/notification";
+import axios from "axios";
 import moment from "moment";
 
 const router = useRouter();
@@ -293,6 +316,9 @@ const sidebarCollapsed = ref(
 // Dropdown states
 const notificationDropdownOpen = ref(false);
 const userDropdownOpen = ref(false);
+
+// Pending users count
+const pendingUsersCount = ref(0);
 
 const toggleSidebar = () => {
   sidebarOpen.value = !sidebarOpen.value;
@@ -375,6 +401,25 @@ const formatDate = (date) => {
   return moment(date).locale("th").fromNow();
 };
 
+// Load pending users count for admins
+const loadPendingUsersCount = async () => {
+  if (!authStore.hasRole("Admin")) return;
+
+  try {
+    const response = await axios.get("/api/auth/pending-users", {
+      headers: {
+        Authorization: `Bearer ${authStore.token}`,
+      },
+    });
+
+    if (response.data.success) {
+      pendingUsersCount.value = response.data.data.count || 0;
+    }
+  } catch (error) {
+    console.error("Error loading pending users count:", error);
+  }
+};
+
 onMounted(async () => {
   // Initialize
   await nextTick();
@@ -400,6 +445,19 @@ onMounted(async () => {
 
   // Load initial notifications
   loadNotifications();
+
+  // Load pending users count
+  loadPendingUsersCount();
+
+  // Set up periodic refresh for pending users count
+  const refreshInterval = setInterval(loadPendingUsersCount, 30000); // Refresh every 30 seconds
+
+  // Cleanup interval on unmount
+  onUnmounted(() => {
+    if (refreshInterval) {
+      clearInterval(refreshInterval);
+    }
+  });
 });
 </script>
 
@@ -690,6 +748,58 @@ onMounted(async () => {
   border: none;
   background: none;
   text-decoration: none;
+}
+
+.btn-link:hover {
+  text-decoration: none;
+}
+
+/* Navigation Group and Submenu Styles */
+.nav-group {
+  position: relative;
+}
+
+.nav-submenu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  margin-left: 2rem;
+  margin-top: 0.25rem;
+}
+
+.nav-sublink {
+  font-size: 0.875rem;
+  padding: 0.4rem 1rem !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+  position: relative;
+}
+
+.nav-sublink:hover {
+  color: white !important;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-sublink.active {
+  color: white !important;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-left: 3px solid #fff;
+}
+
+.nav-sublink .badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.75rem;
+}
+
+/* Responsive adjustments for submenu */
+@media (max-width: 991.98px) {
+  .nav-submenu {
+    margin-left: 1rem;
+  }
+
+  .nav-sublink {
+    padding: 0.35rem 0.75rem !important;
+  }
 }
 
 .btn-link:hover {

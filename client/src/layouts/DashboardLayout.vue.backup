@@ -30,7 +30,7 @@
           <!-- Brand -->
           <router-link to="/" class="header-brand">
             <i class="bi bi-building me-2"></i>
-            <span class="d-none d-sm-inline">ระบบสำรวจข้อมูลภาคสนาม</span>
+            <span class="d-none d-sm-inline">ระบบสำรวจข้อมูลวัด</span>
           </router-link>
         </div>
 

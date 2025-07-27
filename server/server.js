@@ -7,10 +7,12 @@ require("dotenv").config();
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const surveyRoutes = require("./routes/surveys");
-const masterDataRoutes = require("./routes/master-data");
 const uploadRoutes = require("./routes/upload");
 const notificationRoutes = require("./routes/notifications");
 const auditRoutes = require("./routes/audit");
+const verificationRoutes = require("./routes/verification");
+const settingsRoutes = require("./routes/settings");
+const userSettingsRoutes = require("./routes/user-settings");
 
 const { connectDB } = require("./config/database");
 const logger = require("./utils/logger");
@@ -22,13 +24,13 @@ const PORT = process.env.PORT || 3000;
 // Security middleware
 app.use(helmet());
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000, // 15 minutes
-  max: process.env.RATE_LIMIT_MAX_REQUESTS || 100,
-  message: "Too many requests from this IP, please try again later.",
-});
-app.use(limiter);
+// Rate limiting  ปิดการใช้งาน rate limiting ในระหว่างพัฒนา
+// const limiter = rateLimit({
+//   windowMs: process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000, // 15 minutes
+//   max: process.env.RATE_LIMIT_MAX_REQUESTS || 100,
+//   message: "Too many requests from this IP, please try again later.",
+// });
+// app.use(limiter);
 
 // CORS configuration
 app.use(
@@ -95,10 +97,12 @@ app.use("/uploads", express.static("uploads"));
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/surveys", surveyRoutes);
-app.use("/api/master-data", masterDataRoutes);
+app.use("/api/verification", verificationRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/audit", auditRoutes);
+app.use("/api/settings", settingsRoutes);
+app.use("/api/user-settings", userSettingsRoutes);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {

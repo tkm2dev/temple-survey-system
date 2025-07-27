@@ -1,0 +1,242 @@
+/* Enhanced Settings Styles */
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #1a1a1a;
+    --text-color: #e5e5e5;
+    --border-color: #404040;
+  }
+}
+
+/* Font families */
+.font-sarabun {
+  font-family: "Sarabun", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+}
+.font-kanit {
+  font-family: "Kanit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+}
+.font-prompt {
+  font-family: "Prompt", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+}
+.font-mali {
+  font-family: "Mali", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+}
+.font-mitr {
+  font-family: "Mitr", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+}
+.font-system {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Font sizes */
+.size-small {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.size-medium {
+  font-size: 16px;
+  line-height: 1.5;
+}
+.size-large {
+  font-size: 18px;
+  line-height: 1.5;
+}
+.size-extra-large {
+  font-size: 20px;
+  line-height: 1.5;
+}
+
+/* Compact mode */
+.compact-mode {
+  --spacing-unit: 0.75rem;
+}
+
+.compact-mode .p-6 {
+  padding: var(--spacing-unit);
+}
+
+.compact-mode .space-y-4 > * + * {
+  margin-top: calc(var(--spacing-unit) * 0.75);
+}
+
+/* Animation controls */
+.no-animations * {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}
+
+/* Font preview transitions */
+.font-preview {
+  transition: font-family 0.3s ease, font-size 0.3s ease;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: #f9fafb;
+}
+
+/* Mobile responsive improvements */
+@media (max-width: 768px) {
+  .max-w-7xl {
+    padding: 0 1rem;
+  }
+
+  .space-x-8 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .space-x-8 > * {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .lg\:grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Mobile tabs */
+  .space-x-8 button {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* Mobile settings cards */
+  .bg-white.rounded-lg.shadow-sm {
+    margin-bottom: 1rem;
+  }
+}
+
+/* Loading animations */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Toast animations */
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.3s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+/* Toggle switch improvements */
+.toggle-switch {
+  transition: all 0.2s ease-in-out;
+}
+
+.toggle-switch:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Settings card hover effects */
+.settings-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.settings-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+/* Tab navigation improvements */
+.tab-button {
+  position: relative;
+  transition: all 0.2s ease-in-out;
+}
+
+.tab-button:hover::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #d1d5db;
+  border-radius: 1px;
+}
+
+.tab-button.active::after {
+  background: #3b82f6;
+}
+
+/* JSON editor improvements */
+.json-editor {
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  transition: border-color 0.2s ease-in-out;
+}
+
+.json-editor:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Accessibility improvements */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .border-gray-200 {
+    border-color: #000;
+  }
+
+  .text-gray-600 {
+    color: #000;
+  }
+
+  .bg-gray-50 {
+    background-color: #fff;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-break {
+    page-break-after: always;
+  }
+
+  .bg-white {
+    background: white !important;
+  }
+
+  .shadow-sm {
+    box-shadow: none !important;
+  }
+}

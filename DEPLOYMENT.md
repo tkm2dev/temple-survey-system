@@ -1,6 +1,6 @@
 # คู่มือการ Deploy (Deployment Guide)
 
-คำแนะนำการ deploy ระบบสำรวจข้อมูลภาคสนาม
+คำแนะนำการ deploy ระบบสำรวจข้อมูลวัด
 
 ## การเตรียม Production Environment
 

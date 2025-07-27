@@ -8,6 +8,105 @@ const router = express.Router();
 // Apply authentication to all notification routes
 router.use(authenticateToken);
 
+// @route   GET /api/notifications/count
+// @desc    Get unread notification count only
+// @access  Private
+router.get("/count", async (req, res) => {
+  try {
+    const unreadCount = await executeQuery(
+      "SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = FALSE",
+      [req.user.user_id]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        unread_count: unreadCount[0].count,
+      },
+    });
+  } catch (error) {
+    logger.error("Get notification count error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการดึงจำนวนการแจ้งเตือน",
+    });
+  }
+});
+
+// @route   GET /api/notifications/recent
+// @desc    Get recent notifications (last 10)
+// @access  Private
+router.get("/recent", async (req, res) => {
+  try {
+    const notifications = await executeQuery(
+      `SELECT 
+        n.*,
+        st.target_name
+      FROM notifications n
+      LEFT JOIN survey_targets st ON n.related_target_id = st.target_id
+      WHERE n.user_id = ?
+      ORDER BY n.created_at DESC 
+      LIMIT 10`,
+      [req.user.user_id]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        notifications,
+        count: notifications.length,
+      },
+    });
+  } catch (error) {
+    logger.error("Get recent notifications error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการดึงการแจ้งเตือนล่าสุด",
+    });
+  }
+});
+
+// @route   POST /api/notifications/test
+// @desc    Send test notification (Admin only - for testing)
+// @access  Private/Admin
+router.post("/test", async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== "Admin") {
+      return res.status(403).json({
+        success: false,
+        message: "ไม่มีสิทธิ์ในการส่งการแจ้งเตือนทดสอบ",
+      });
+    }
+
+    const { target_user_id, message } = req.body;
+    const userId = target_user_id || req.user.user_id; // ส่งให้ตัวเองถ้าไม่ระบุ
+
+    await executeQuery(
+      `INSERT INTO notifications (user_id, title, message, type)
+       VALUES (?, ?, ?, ?)`,
+      [
+        userId,
+        "การแจ้งเตือนทดสอบ 🧪",
+        message ||
+          "นี่คือการทดสอบระบบการแจ้งเตือน หากคุณเห็นข้อความนี้ แสดงว่าระบบทำงานปกติ",
+        "info",
+      ]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "ส่งการแจ้งเตือนทดสอบสำเร็จ",
+    });
+  } catch (error) {
+    logger.error("Send test notification error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการส่งการแจ้งเตือนทดสอบ",
+    });
+  }
+});
+
 // @route   GET /api/notifications
 // @desc    Get user notifications
 // @access  Private

@@ -7,6 +7,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.vue";
 
 // Auth Pages
 import LoginPage from "@/views/auth/LoginPage.vue";
+import RegisterPage from "@/views/auth/RegisterPage.vue";
+import DigitalVerificationPage from "@/views/auth/DigitalVerificationPage.vue";
 
 // Dashboard Pages
 import DashboardHome from "@/views/dashboard/DashboardHome.vue";
@@ -23,6 +25,10 @@ import UserDetail from "@/views/users/UserDetail.vue";
 import UserCreate from "@/views/users/UserCreate.vue";
 import UserEdit from "@/views/users/UserEdit.vue";
 
+// Admin Pages
+import PendingUsersPage from "@/views/admin/PendingUsersPage.vue";
+import SystemSettingsPage from "@/views/admin/SystemSettingsPage.vue";
+
 // Master Data Pages
 import MasterDataList from "@/views/master-data/MasterDataList.vue";
 
@@ -33,7 +39,7 @@ import AuditLogs from "@/views/audit/AuditLogs.vue";
 import Profile from "@/views/profile/Profile.vue";
 
 // Settings Pages
-import SettingsPage from "@/views/SettingsPage.vue";
+import EnhancedSettingsPageBootstrap from "@/views/EnhancedSettingsPageBootstrap.vue";
 
 // Error Pages
 import NotFoundPage from "@/views/errors/NotFoundPage.vue";
@@ -54,7 +60,31 @@ const routes = [
           title: "เข้าสู่ระบบ",
         },
       },
+      {
+        path: "register",
+        name: "Register",
+        component: RegisterPage,
+        meta: {
+          requiresGuest: true,
+          title: "ลงทะเบียนใช้งาน",
+        },
+      },
+      {
+        path: "digital-verification",
+        name: "DigitalVerification",
+        component: DigitalVerificationPage,
+        meta: {
+          requiresGuest: true,
+          title: "ลงทะเบียนพร้อมยืนยันตัวตน",
+        },
+      },
     ],
+  },
+
+  // Direct register route redirect
+  {
+    path: "/register",
+    redirect: "/register",
   },
 
   // Dashboard Routes
@@ -144,6 +174,20 @@ const routes = [
         },
       },
       {
+        path: "users/pending",
+        name: "PendingUsers",
+        component: PendingUsersPage,
+        meta: {
+          title: "ผู้ใช้งานที่รออนุมัติ",
+          roles: ["Admin"],
+          breadcrumb: [
+            { text: "หน้าแรก", to: "/" },
+            { text: "จัดการผู้ใช้งาน", to: "/users" },
+            { text: "รออนุมัติ" },
+          ],
+        },
+      },
+      {
         path: "users/create",
         name: "UserCreate",
         component: UserCreate,
@@ -224,17 +268,15 @@ const routes = [
         },
       },
 
-      // Settings
+      // Settings - Unified Settings Page
       {
         path: "settings",
+        alias: "system-settings",
         name: "Settings",
-        component: SettingsPage,
+        component: EnhancedSettingsPageBootstrap,
         meta: {
-          title: "การตั้งค่าระบบ",
-          breadcrumb: [
-            { text: "หน้าแรก", to: "/" },
-            { text: "การตั้งค่าระบบ" },
-          ],
+          title: "การตั้งค่า",
+          breadcrumb: [{ text: "หน้าแรก", to: "/" }, { text: "การตั้งค่า" }],
         },
       },
     ],
@@ -279,7 +321,7 @@ router.beforeEach(async (to, from, next) => {
 
   // Set page title
   if (to.meta.title) {
-    document.title = `${to.meta.title} | ระบบสำรวจข้อมูลภาคสนาม`;
+    document.title = `${to.meta.title} | ระบบสำรวจข้อมูลวัด`;
   }
 
   // Check if route requires authentication

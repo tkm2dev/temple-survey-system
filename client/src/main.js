@@ -10,6 +10,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 // Import custom CSS
 import "./assets/css/app.css";
+import "./assets/css/enhanced-settings.css";
 
 // Create app instance
 const app = createApp(App);

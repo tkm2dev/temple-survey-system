@@ -9,7 +9,7 @@
         </h1>
         <p class="text-muted mb-0">
           <i class="bi bi-calendar-event me-1"></i>
-          ยินดีต้อนรับสู่ระบบสำรวจข้อมูลภาคสนาม - {{ currentDate }}
+          ยินดีต้อนรับสู่ระบบสำรวจข้อมูลวัด - {{ currentDate }}
         </p>
       </div>
       <div class="d-flex gap-2">

@@ -28,7 +28,7 @@ export const authService = {
 
   // Register new user (Admin only)
   async register(userData) {
-    const response = await api.post("/auth/register", userData);
+    const response = await api.post("/register", userData);
     return response.data;
   },
 };
