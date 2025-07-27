@@ -13,6 +13,7 @@ const auditRoutes = require("./routes/audit");
 const verificationRoutes = require("./routes/verification");
 const settingsRoutes = require("./routes/settings");
 const userSettingsRoutes = require("./routes/user-settings");
+const dashboardRoutes = require("./routes/dashboard");
 
 const { connectDB } = require("./config/database");
 const logger = require("./utils/logger");
@@ -103,6 +104,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/user-settings", userSettingsRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {

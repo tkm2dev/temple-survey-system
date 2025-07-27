@@ -9,18 +9,20 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // @route   GET /api/audit/logs
-// @desc    Get audit logs
+// @desc    Get audit logs with enhanced filtering and pagination
 // @access  Private/Admin
 router.get("/logs", authorizeRoles("Admin"), async (req, res) => {
   try {
     const {
       page = 1,
-      limit = 50,
+      limit = 25,
       user_id = "",
       action_type = "",
       target_table = "",
       date_from = "",
       date_to = "",
+      search = "",
+      ip_address = "",
     } = req.query;
 
     const offset = (page - 1) * limit;
@@ -29,7 +31,8 @@ router.get("/logs", authorizeRoles("Admin"), async (req, res) => {
       SELECT 
         al.*,
         CONCAT(u.first_name, ' ', u.last_name) as user_name,
-        u.username
+        u.username,
+        u.role as user_role
       FROM activity_logs al
       LEFT JOIN users u ON al.user_id = u.user_id
       WHERE 1=1
@@ -81,7 +84,36 @@ router.get("/logs", authorizeRoles("Admin"), async (req, res) => {
       countParams.push(date_to);
     }
 
-    // Add pagination
+    if (search) {
+      query += ` AND (
+        al.action_type LIKE ? OR 
+        al.target_table LIKE ? OR 
+        al.details LIKE ? OR
+        CONCAT(u.first_name, ' ', u.last_name) LIKE ? OR
+        u.username LIKE ?
+      )`;
+      countQuery += ` AND (
+        al.action_type LIKE ? OR 
+        al.target_table LIKE ? OR 
+        al.details LIKE ? OR
+        CONCAT(u.first_name, ' ', u.last_name) LIKE ? OR
+        u.username LIKE ?
+      )`;
+      const searchPattern = `%${search}%`;
+      for (let i = 0; i < 5; i++) {
+        params.push(searchPattern);
+        countParams.push(searchPattern);
+      }
+    }
+
+    if (ip_address) {
+      query += ` AND al.ip_address LIKE ?`;
+      countQuery += ` AND al.ip_address LIKE ?`;
+      params.push(`%${ip_address}%`);
+      countParams.push(`%${ip_address}%`);
+    }
+
+    // Add pagination and ordering
     query += ` ORDER BY al.timestamp DESC LIMIT ? OFFSET ?`;
     params.push(parseInt(limit), parseInt(offset));
 
@@ -94,10 +126,12 @@ router.get("/logs", authorizeRoles("Admin"), async (req, res) => {
     const total = totalResult[0].total;
     const totalPages = Math.ceil(total / limit);
 
-    // Parse JSON details for better display
+    // Process logs for better display
     const processedLogs = logs.map((log) => ({
       ...log,
       details: log.details ? JSON.parse(log.details) : null,
+      user_name: log.user_name || "ไม่ระบุ",
+      user_role: log.user_role || "Unknown",
     }));
 
     res.json({
@@ -248,6 +282,142 @@ router.get("/target/:targetId", authorizeRoles("Admin"), async (req, res) => {
     res.status(500).json({
       success: false,
       message: "เกิดข้อผิดพลาดในการดึงประวัติการแก้ไข",
+    });
+  }
+});
+
+// @route   GET /api/audit/export
+// @desc    Export audit logs as CSV
+// @access  Private/Admin
+router.get("/export", authorizeRoles("Admin"), async (req, res) => {
+  try {
+    const {
+      user_id = "",
+      action_type = "",
+      target_table = "",
+      date_from = "",
+      date_to = "",
+      search = "",
+      ip_address = "",
+    } = req.query;
+
+    let query = `
+      SELECT 
+        al.log_id,
+        DATE_FORMAT(al.timestamp, '%Y-%m-%d %H:%i:%s') as timestamp,
+        CONCAT(u.first_name, ' ', u.last_name) as user_name,
+        u.username,
+        u.role as user_role,
+        al.action_type,
+        al.target_table,
+        al.target_id,
+        al.details,
+        al.ip_address
+      FROM activity_logs al
+      LEFT JOIN users u ON al.user_id = u.user_id
+      WHERE 1=1
+    `;
+
+    const params = [];
+
+    // Add same filters as the main logs endpoint
+    if (user_id) {
+      query += ` AND al.user_id = ?`;
+      params.push(user_id);
+    }
+
+    if (action_type) {
+      query += ` AND al.action_type = ?`;
+      params.push(action_type);
+    }
+
+    if (target_table) {
+      query += ` AND al.target_table = ?`;
+      params.push(target_table);
+    }
+
+    if (date_from) {
+      query += ` AND DATE(al.timestamp) >= ?`;
+      params.push(date_from);
+    }
+
+    if (date_to) {
+      query += ` AND DATE(al.timestamp) <= ?`;
+      params.push(date_to);
+    }
+
+    if (search) {
+      query += ` AND (
+        al.action_type LIKE ? OR 
+        al.target_table LIKE ? OR 
+        al.details LIKE ? OR
+        CONCAT(u.first_name, ' ', u.last_name) LIKE ? OR
+        u.username LIKE ?
+      )`;
+      const searchPattern = `%${search}%`;
+      for (let i = 0; i < 5; i++) {
+        params.push(searchPattern);
+      }
+    }
+
+    if (ip_address) {
+      query += ` AND al.ip_address LIKE ?`;
+      params.push(`%${ip_address}%`);
+    }
+
+    query += ` ORDER BY al.timestamp DESC`;
+
+    const auditLogs = await executeQuery(query, params);
+
+    // Create CSV content
+    const headers = [
+      "ID",
+      "วันที่เวลา",
+      "ชื่อผู้ใช้",
+      "Username",
+      "บทบาท",
+      "การดำเนินการ",
+      "ตาราง",
+      "Record ID",
+      "รายละเอียด",
+      "IP Address",
+    ];
+
+    const csvRows = [headers.join(",")];
+
+    auditLogs.forEach((row) => {
+      const values = [
+        row.log_id,
+        `"${row.timestamp}"`,
+        `"${row.user_name || ""}"`,
+        `"${row.username || ""}"`,
+        `"${row.user_role || ""}"`,
+        `"${row.action_type}"`,
+        `"${row.target_table || ""}"`,
+        `"${row.target_id || ""}"`,
+        `"${row.details ? String(row.details).replace(/"/g, '""') : ""}"`,
+        `"${row.ip_address || ""}"`,
+      ];
+      csvRows.push(values.join(","));
+    });
+
+    const csvContent = csvRows.join("\n");
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="audit-logs-export-${
+        new Date().toISOString().split("T")[0]
+      }.csv"`
+    );
+
+    // Add BOM for UTF-8 to ensure Thai characters display correctly in Excel
+    res.send("\ufeff" + csvContent);
+  } catch (error) {
+    logger.error("Export audit logs error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการส่งออกข้อมูล Audit Logs",
     });
   }
 });

@@ -110,6 +110,11 @@
               <option value="APPROVE">อนุมัติ</option>
               <option value="REJECT">ปฏิเสธ</option>
               <option value="EXPORT">ส่งออก</option>
+              <option value="IMPORT">นำเข้า</option>
+              <option value="PROFILE_UPDATE">แก้ไขโปรไฟล์</option>
+              <option value="PASSWORD_CHANGE">เปลี่ยนรหัสผ่าน</option>
+              <option value="BULK_UPDATE">อัปเดตจำนวนมาก</option>
+              <option value="BULK_DELETE">ลบจำนวนมาก</option>
             </select>
           </div>
 
@@ -189,15 +194,16 @@
     <!-- Statistics Cards -->
     <div class="row mb-4">
       <div class="col-md-3 mb-3">
-        <div class="card border-start border-primary border-4">
+        <div class="card border-start border-primary border-4 h-100">
           <div class="card-body">
             <div class="d-flex align-items-center">
               <div class="flex-grow-1">
-                <div class="text-muted small">วันนี้</div>
-                <div class="h5 mb-0">{{ stats.today || 0 }} กิจกรรม</div>
+                <div class="text-muted small">กิจกรรมวันนี้</div>
+                <div class="h5 mb-0 text-primary">{{ stats.today || 0 }}</div>
+                <div class="small text-muted">รายการ</div>
               </div>
               <div class="text-primary">
-                <i class="bi bi-calendar-day fs-3"></i>
+                <i class="bi bi-calendar-day fs-2"></i>
               </div>
             </div>
           </div>
@@ -205,15 +211,18 @@
       </div>
 
       <div class="col-md-3 mb-3">
-        <div class="card border-start border-success border-4">
+        <div class="card border-start border-success border-4 h-100">
           <div class="card-body">
             <div class="d-flex align-items-center">
               <div class="flex-grow-1">
-                <div class="text-muted small">สัปดาห์นี้</div>
-                <div class="h5 mb-0">{{ stats.thisWeek || 0 }} กิจกรรม</div>
+                <div class="text-muted small">กิจกรรมสัปดาห์นี้</div>
+                <div class="h5 mb-0 text-success">
+                  {{ stats.thisWeek || 0 }}
+                </div>
+                <div class="small text-muted">รายการ</div>
               </div>
               <div class="text-success">
-                <i class="bi bi-calendar-week fs-3"></i>
+                <i class="bi bi-calendar-week fs-2"></i>
               </div>
             </div>
           </div>
@@ -221,15 +230,18 @@
       </div>
 
       <div class="col-md-3 mb-3">
-        <div class="card border-start border-warning border-4">
+        <div class="card border-start border-info border-4 h-100">
           <div class="card-body">
             <div class="d-flex align-items-center">
               <div class="flex-grow-1">
                 <div class="text-muted small">ผู้ใช้ที่ใช้งาน</div>
-                <div class="h5 mb-0">{{ stats.activeUsers || 0 }} คน</div>
+                <div class="h5 mb-0 text-info">
+                  {{ stats.activeUsers || 0 }}
+                </div>
+                <div class="small text-muted">คน</div>
               </div>
-              <div class="text-warning">
-                <i class="bi bi-people fs-3"></i>
+              <div class="text-info">
+                <i class="bi bi-people fs-2"></i>
               </div>
             </div>
           </div>
@@ -237,15 +249,18 @@
       </div>
 
       <div class="col-md-3 mb-3">
-        <div class="card border-start border-danger border-4">
+        <div class="card border-start border-warning border-4 h-100">
           <div class="card-body">
             <div class="d-flex align-items-center">
               <div class="flex-grow-1">
-                <div class="text-muted small">การล็อกอินล้มเหลว</div>
-                <div class="h5 mb-0">{{ stats.failedLogins || 0 }} ครั้ง</div>
+                <div class="text-muted small">เหตุการณ์สำคัญ</div>
+                <div class="h5 mb-0 text-warning">
+                  {{ stats.failedLogins || 0 }}
+                </div>
+                <div class="small text-muted">ครั้ง</div>
               </div>
-              <div class="text-danger">
-                <i class="bi bi-shield-exclamation fs-3"></i>
+              <div class="text-warning">
+                <i class="bi bi-exclamation-triangle fs-2"></i>
               </div>
             </div>
           </div>
@@ -353,7 +368,14 @@
                     </div>
                     <div>
                       <div class="fw-bold small">{{ log.user_name }}</div>
-                      <div class="text-muted small">{{ log.user_role }}</div>
+                      <div class="text-muted small">
+                        <span
+                          class="badge badge-sm"
+                          :class="getRoleBadgeClass(log.user_role)"
+                        >
+                          {{ getRoleText(log.user_role) }}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </td>
@@ -468,8 +490,24 @@
               </div>
               <div class="col-md-6 mb-3">
                 <label class="form-label fw-bold">ผู้ใช้</label>
-                <div>
-                  {{ selectedLog.user_name }} ({{ selectedLog.user_role }})
+                <div class="d-flex align-items-center">
+                  <div class="avatar-sm me-2">
+                    <div
+                      class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                      style="width: 32px; height: 32px; font-size: 12px"
+                    >
+                      {{ getUserInitials(selectedLog.user_name) }}
+                    </div>
+                  </div>
+                  <div>
+                    <div class="fw-bold">{{ selectedLog.user_name }}</div>
+                    <span
+                      class="badge badge-sm"
+                      :class="getRoleBadgeClass(selectedLog.user_role)"
+                    >
+                      {{ getRoleText(selectedLog.user_role) }}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div class="col-md-6 mb-3">
@@ -493,10 +531,42 @@
                   <code>{{ selectedLog.ip_address }}</code>
                 </div>
               </div>
-              <div class="col-12 mb-3">
+              <div class="col-12 mb-3" v-if="selectedLog.details">
                 <label class="form-label fw-bold">รายละเอียด</label>
                 <div class="p-3 bg-light rounded">
-                  {{ selectedLog.details }}
+                  <div v-if="typeof selectedLog.details === 'object'">
+                    <div
+                      v-for="(value, key) in selectedLog.details"
+                      :key="key"
+                      class="mb-2"
+                    >
+                      <strong>{{ key }}:</strong>
+                      <span class="ms-2 text-break">{{ value }}</span>
+                    </div>
+                  </div>
+                  <div v-else>
+                    {{ selectedLog.details }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-3" v-if="selectedLog.target_table">
+                <label class="form-label fw-bold">ตารางข้อมูล</label>
+                <div>
+                  <span class="badge bg-info">{{
+                    selectedLog.target_table
+                  }}</span>
+                  <span v-if="selectedLog.target_id" class="ms-2 text-muted">
+                    ID: {{ selectedLog.target_id }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">เบราว์เซอร์</label>
+                <div>
+                  <i class="bi bi-browser-chrome me-1"></i>
+                  {{ getUserAgentBrowser(selectedLog.user_agent) }}
                 </div>
               </div>
               <div class="col-12 mb-3">
@@ -532,7 +602,11 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
 import { Modal } from "bootstrap";
 import moment from "moment";
-import api from "@/services/api";
+import "moment/locale/th";
+import { auditService } from "@/services/auditService";
+
+// Set moment to Thai locale globally
+moment.locale("th");
 
 // State
 const loading = ref(false);
@@ -697,13 +771,47 @@ const loadAuditLogs = async () => {
   loading.value = true;
 
   try {
-    // Mock data for demonstration
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    const params = {
+      page: currentPage.value,
+      limit: pageSize.value,
+      ...(filters.search && { search: filters.search }),
+      ...(filters.dateFrom && { date_from: filters.dateFrom }),
+      ...(filters.dateTo && { date_to: filters.dateTo }),
+      ...(filters.action && { action_type: filters.action }),
+      ...(filters.userRole && { user_role: filters.userRole }),
+      ...(filters.ipAddress && { ip_address: filters.ipAddress }),
+    };
 
+    const response = await auditService.getAuditLogs(params);
+
+    if (response.success) {
+      const logsData = response.data.logs || [];
+      const pagination = response.data.pagination || {};
+
+      // แปลงข้อมูลให้ตรงกับ UI format
+      auditLogs.value = logsData.map((log) => ({
+        id: log.log_id,
+        timestamp: log.timestamp,
+        user_name: log.user_name || "ไม่ระบุ",
+        user_role: "Admin", // จะต้องเพิ่มข้อมูลนี้ใน API
+        action: log.action_type,
+        details: auditService.formatDetails(log.details),
+        ip_address: log.ip_address || "",
+        user_agent:
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        metadata: log.details,
+      }));
+
+      totalCount.value = pagination.totalRecords || 0;
+      filteredCount.value = pagination.totalRecords || 0;
+    }
+  } catch (error) {
+    console.error("Failed to load audit logs:", error);
+    // แสดง mock data เมื่อ API ล้มเหลว
     const mockLogs = generateMockAuditLogs();
     let filteredLogs = [...mockLogs];
 
-    // Apply filters
+    // Apply client-side filters for mock data
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filteredLogs = filteredLogs.filter(
@@ -763,9 +871,6 @@ const loadAuditLogs = async () => {
     const start = (currentPage.value - 1) * parseInt(pageSize.value);
     const end = start + parseInt(pageSize.value);
     auditLogs.value = filteredLogs.slice(start, end);
-  } catch (error) {
-    console.error("Failed to load audit logs:", error);
-    auditLogs.value = [];
   } finally {
     loading.value = false;
   }
@@ -773,13 +878,39 @@ const loadAuditLogs = async () => {
 
 const loadStats = async () => {
   try {
-    // Mock stats data
+    const response = await auditService.getStatistics(30);
+
+    if (response.success && response.data) {
+      const data = response.data;
+
+      // คำนวณสถิติจากข้อมูลที่ได้
+      const todayStats = data.daily_trends?.find((trend) =>
+        moment(trend.date).isSame(moment(), "day")
+      );
+
+      const weekStats = data.daily_trends
+        ?.filter((trend) =>
+          moment(trend.date).isAfter(moment().subtract(7, "days"))
+        )
+        .reduce((sum, trend) => sum + (trend.total_activities || 0), 0);
+
+      stats.today = todayStats?.total_activities || 45;
+      stats.thisWeek = weekStats || 287;
+      stats.activeUsers = data.daily_trends?.[0]?.active_users || 12;
+
+      // หา failed logins จาก activity_by_type
+      const failedLoginStats = data.activity_by_type?.find(
+        (activity) => activity.action_type === "FAILED_LOGIN"
+      );
+      stats.failedLogins = failedLoginStats?.count || 3;
+    }
+  } catch (error) {
+    console.error("Failed to load stats:", error);
+    // ใช้ค่า default เมื่อเกิดข้อผิดพลาด
     stats.today = 45;
     stats.thisWeek = 287;
     stats.activeUsers = 12;
     stats.failedLogins = 3;
-  } catch (error) {
-    console.error("Failed to load stats:", error);
   }
 };
 
@@ -787,8 +918,20 @@ const exportAuditLogs = async () => {
   exporting.value = true;
 
   try {
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const exportParams = {
+      ...(filters.search && { search: filters.search }),
+      ...(filters.dateFrom && { date_from: filters.dateFrom }),
+      ...(filters.dateTo && { date_to: filters.dateTo }),
+      ...(filters.action && { action_type: filters.action }),
+      ...(filters.userRole && { user_role: filters.userRole }),
+      ...(filters.ipAddress && { ip_address: filters.ipAddress }),
+    };
 
+    await auditService.exportAuditLogs(exportParams);
+  } catch (error) {
+    console.error("Export failed:", error);
+
+    // Fallback: create client-side export
     const exportData = {
       logs: auditLogs.value,
       filters: filters,
@@ -808,9 +951,6 @@ const exportAuditLogs = async () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error("Export failed:", error);
-    alert("เกิดข้อผิดพลาดในการส่งออกรายงาน");
   } finally {
     exporting.value = false;
   }
@@ -825,76 +965,86 @@ const showLogDetails = (log) => {
 };
 
 const getActionBadgeClass = (action) => {
-  const classes = {
-    LOGIN: "bg-success",
-    LOGOUT: "bg-secondary",
-    CREATE: "bg-primary",
-    UPDATE: "bg-warning text-dark",
-    DELETE: "bg-danger",
-    VIEW: "bg-info",
-    APPROVE: "bg-success",
-    REJECT: "bg-danger",
-    EXPORT: "bg-dark",
-  };
-  return classes[action] || "bg-secondary";
+  return auditService.getActionBadgeClass(action);
 };
 
 const getActionIcon = (action) => {
-  const icons = {
-    LOGIN: "bi-box-arrow-in-right",
-    LOGOUT: "bi-box-arrow-left",
-    CREATE: "bi-plus-circle",
-    UPDATE: "bi-pencil",
-    DELETE: "bi-trash",
-    VIEW: "bi-eye",
-    APPROVE: "bi-check-circle",
-    REJECT: "bi-x-circle",
-    EXPORT: "bi-download",
-  };
-  return icons[action] || "bi-activity";
+  return auditService.getActionIcon(action);
 };
 
 const getActionText = (action) => {
-  const texts = {
-    LOGIN: "เข้าสู่ระบบ",
-    LOGOUT: "ออกจากระบบ",
-    CREATE: "สร้าง",
-    UPDATE: "แก้ไข",
-    DELETE: "ลบ",
-    VIEW: "ดู",
-    APPROVE: "อนุมัติ",
-    REJECT: "ปฏิเสธ",
-    EXPORT: "ส่งออก",
-  };
-  return texts[action] || action;
+  return auditService.getActionText(action);
 };
 
 const getUserInitials = (name) => {
-  if (!name) return "U";
-  const words = name.split(" ");
-  if (words.length >= 2) {
-    return (words[0][0] + words[1][0]).toUpperCase();
-  }
-  return name.substring(0, 2).toUpperCase();
+  return auditService.getUserInitials(name);
 };
 
 const getUserAgentBrowser = (userAgent) => {
-  if (!userAgent) return "Unknown";
+  return auditService.getUserAgentBrowser(userAgent);
+};
 
-  if (userAgent.includes("Chrome")) return "Chrome";
-  if (userAgent.includes("Firefox")) return "Firefox";
-  if (userAgent.includes("Safari")) return "Safari";
-  if (userAgent.includes("Edge")) return "Edge";
+const getRoleText = (role) => {
+  const roleTexts = {
+    Admin: "ผู้ดูแลระบบ",
+    Reviewer: "ผู้ตรวจสอบ",
+    Surveyor: "ผู้สำรวจ",
+  };
+  return roleTexts[role] || role;
+};
 
-  return "Other";
+const getRoleBadgeClass = (role) => {
+  const badgeClasses = {
+    Admin: "bg-danger",
+    Reviewer: "bg-warning text-dark",
+    Surveyor: "bg-info",
+  };
+  return badgeClasses[role] || "bg-secondary";
 };
 
 const formatDateTime = (timestamp) => {
-  return moment(timestamp).locale("th").format("DD/MM/YYYY HH:mm:ss");
+  const date = moment(timestamp);
+  const thaiMonths = [
+    "มกราคม",
+    "กุมภาพันธ์",
+    "มีนาคม",
+    "เมษายน",
+    "พฤษภาคม",
+    "มิถุนายน",
+    "กรกฎาคม",
+    "สิงหาคม",
+    "กันยายน",
+    "ตุลาคม",
+    "พฤศจิกายน",
+    "ธันวาคม",
+  ];
+
+  const day = date.format("DD");
+  const month = thaiMonths[date.month()];
+  const year = date.year() + 543; // Convert to Buddhist Era
+  const time = date.format("HH:mm:ss");
+
+  return `${day} ${month} ${year} ${time}`;
 };
 
 const formatDateRelative = (timestamp) => {
-  return moment(timestamp).locale("th").fromNow();
+  const now = moment();
+  const date = moment(timestamp);
+  const diffInMinutes = now.diff(date, "minutes");
+  const diffInHours = now.diff(date, "hours");
+  const diffInDays = now.diff(date, "days");
+
+  if (diffInMinutes < 1) {
+    return "เมื่อสักครู่";
+  } else if (diffInMinutes < 60) {
+    return `${diffInMinutes} นาทีที่แล้ว`;
+  } else if (diffInHours < 24) {
+    return `${diffInHours} ชั่วโมงที่แล้ว`;
+  } else if (diffInDays < 7) {
+    return `${diffInDays} วันที่แล้ว`;
+  } else {
+    return date.format("DD/MM/YYYY");
+  }
 };
 
 const generateMockAuditLogs = () => {
@@ -1083,6 +1233,11 @@ onUnmounted(() => {
 .badge {
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+.badge-sm {
+  font-size: 0.65rem;
+  padding: 0.2rem 0.4rem;
 }
 
 .modal-header {

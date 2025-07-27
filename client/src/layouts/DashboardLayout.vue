@@ -12,7 +12,7 @@
         <div class="d-flex align-items-center">
           <!-- Mobile Menu Toggle -->
           <button
-            class="navbar-toggler d-lg-none me-2"
+            class="navbar- // Load notifications loadNotifications(); // Cleanup on unmount onUnmounted(() => { // Cleanup if needed }); });e me-2"
             type="button"
             @click="toggleSidebar"
           >
@@ -201,26 +201,6 @@
                 <i class="bi bi-people"></i>
                 <span>จัดการผู้ใช้งาน</span>
               </router-link>
-
-              <!-- Pending Users Submenu -->
-              <ul class="nav-submenu">
-                <li class="nav-item">
-                  <router-link
-                    to="/users/pending"
-                    class="nav-link nav-sublink"
-                    active-class="active"
-                  >
-                    <i class="bi bi-clock-history"></i>
-                    <span>รออนุมัติ</span>
-                    <span
-                      v-if="pendingUsersCount > 0"
-                      class="badge bg-warning text-dark ms-auto"
-                    >
-                      {{ pendingUsersCount }}
-                    </span>
-                  </router-link>
-                </li>
-              </ul>
             </div>
           </li>
 
@@ -317,9 +297,6 @@ const sidebarCollapsed = ref(
 const notificationDropdownOpen = ref(false);
 const userDropdownOpen = ref(false);
 
-// Pending users count
-const pendingUsersCount = ref(0);
-
 const toggleSidebar = () => {
   sidebarOpen.value = !sidebarOpen.value;
 };
@@ -401,25 +378,6 @@ const formatDate = (date) => {
   return moment(date).locale("th").fromNow();
 };
 
-// Load pending users count for admins
-const loadPendingUsersCount = async () => {
-  if (!authStore.hasRole("Admin")) return;
-
-  try {
-    const response = await axios.get("/api/auth/pending-users", {
-      headers: {
-        Authorization: `Bearer ${authStore.token}`,
-      },
-    });
-
-    if (response.data.success) {
-      pendingUsersCount.value = response.data.data.count || 0;
-    }
-  } catch (error) {
-    console.error("Error loading pending users count:", error);
-  }
-};
-
 onMounted(async () => {
   // Initialize
   await nextTick();
@@ -445,19 +403,6 @@ onMounted(async () => {
 
   // Load initial notifications
   loadNotifications();
-
-  // Load pending users count
-  loadPendingUsersCount();
-
-  // Set up periodic refresh for pending users count
-  const refreshInterval = setInterval(loadPendingUsersCount, 30000); // Refresh every 30 seconds
-
-  // Cleanup interval on unmount
-  onUnmounted(() => {
-    if (refreshInterval) {
-      clearInterval(refreshInterval);
-    }
-  });
 });
 </script>
 

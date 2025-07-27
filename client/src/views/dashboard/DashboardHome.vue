@@ -234,11 +234,7 @@
               <div class="d-flex align-items-center">
                 <div class="flex-grow-1">
                   <div class="text-muted small">อัตราผ่าน</div>
-                  <div class="h5 mb-0">
-                    {{
-                      getPercentage(stats.approvedSurveys, stats.totalSurveys)
-                    }}%
-                  </div>
+                  <div class="h5 mb-0">{{ stats.completionRate }}%</div>
                 </div>
                 <div class="text-info">
                   <i class="bi bi-graph-up fs-3"></i>
@@ -534,16 +530,26 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed, nextTick, watch } from "vue";
+import {
+  ref,
+  reactive,
+  onMounted,
+  computed,
+  nextTick,
+  watch,
+  onUnmounted,
+} from "vue";
 import { useAuthStore } from "@/stores/auth";
-import api from "@/services/api";
+import { useToast } from "@/composables/useToast";
+import dashboardService from "@/services/dashboardService";
 import moment from "moment";
 import { Chart, registerables } from "chart.js";
 
 Chart.register(...registerables);
 
-// Auth store
+// Stores and composables
 const authStore = useAuthStore();
+const { showToast } = useToast();
 
 // State
 const loading = ref(false);
@@ -558,41 +564,23 @@ const stats = reactive({
   approvedSurveys: 0,
   pendingSurveys: 0,
   draftSurveys: 0,
+  rejectedSurveys: 0,
   totalUsers: 0,
   activeUsers: 0,
   todaySurveys: 0,
   weekSurveys: 0,
   monthSurveys: 0,
   newSurveysThisMonth: 0,
+  completionRate: 0,
 });
 
 const recentSurveys = ref([]);
-const systemNotifications = ref([
-  {
-    id: 1,
-    title: "ระบบได้รับการอัปเดต",
-    message: "เพิ่มฟีเจอร์การส่งออกรายงานใหม่",
-    date: new Date(),
-    icon: "bi bi-arrow-up-circle",
-    color: "#28a745",
-  },
-  {
-    id: 2,
-    title: "การสำรวจใหม่",
-    message: "มีการสำรวจใหม่ 5 รายการรอการตรวจสอบ",
-    date: new Date(Date.now() - 3600000),
-    icon: "bi bi-clipboard-check",
-    color: "#ffc107",
-  },
-  {
-    id: 3,
-    title: "การบำรุงรักษาระบบ",
-    message: "ระบบจะหยุดให้บริการชั่วคราววันอาทิตย์นี้ 02:00-04:00",
-    date: new Date(Date.now() - 7200000),
-    icon: "bi bi-tools",
-    color: "#17a2b8",
-  },
-]);
+const systemNotifications = ref([]);
+const chartData = reactive({
+  statusDistribution: [],
+  typeDistribution: [],
+  monthlyTrends: [],
+});
 
 // Chart references
 const statusChart = ref(null);
@@ -611,23 +599,32 @@ const hasStatusData = computed(() => {
 
 // Methods
 const formatNumber = (num) => {
-  return new Intl.NumberFormat("th-TH").format(num || 0);
+  return dashboardService.formatNumber(num);
 };
 
 const getPercentage = (part, total) => {
-  if (!total) return 0;
-  return Math.round((part / total) * 100);
+  return dashboardService.getPercentage(part, total);
 };
 
 const refreshData = async () => {
   loading.value = true;
   try {
-    await Promise.all([loadStats(), loadRecentSurveys()]);
+    await Promise.all([
+      loadDashboardStats(),
+      loadRecentSurveys(),
+      loadSystemNotifications(),
+    ]);
 
     if (hasStatusData.value) {
+      await nextTick();
       await createStatusChart();
       await createTrendsChart();
     }
+
+    showToast("ข้อมูลได้รับการอัปเดตแล้ว", "success");
+  } catch (error) {
+    console.error("Refresh data error:", error);
+    showToast("เกิดข้อผิดพลาดในการโหลดข้อมูล", "error");
   } finally {
     loading.value = false;
   }
@@ -636,106 +633,91 @@ const refreshData = async () => {
 const exportDashboard = async () => {
   exporting.value = true;
   try {
-    // Simulate export process
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    const data = {
-      stats: stats,
-      recentSurveys: recentSurveys.value,
-      exportDate: new Date().toISOString(),
-      user: authStore.userName,
-    };
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `dashboard-report-${moment().format("YYYY-MM-DD")}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    await dashboardService.exportDashboard({ format: "csv" });
+    showToast("ส่งออกรายงานสำเร็จ", "success");
   } catch (error) {
     console.error("Export failed:", error);
-    alert("เกิดข้อผิดพลาดในการส่งออกรายงาน");
+    showToast("เกิดข้อผิดพลาดในการส่งออกรายงาน", "error");
   } finally {
     exporting.value = false;
   }
 };
 
-const loadStats = async () => {
+const loadDashboardStats = async () => {
   try {
-    const response = await api.get("/surveys", {
-      params: { limit: 1000 },
-    });
+    const response = await dashboardService.getDashboardStats();
 
-    if (response.data.success) {
-      const surveys = response.data.data.surveys;
+    if (response.success) {
+      const overview = response.data.overview;
+      Object.assign(stats, overview);
 
-      stats.totalSurveys = surveys.length;
-      stats.approvedSurveys = surveys.filter(
-        (s) => s.status === "Approved"
-      ).length;
-      stats.pendingSurveys = surveys.filter(
-        (s) => s.status === "Pending Review"
-      ).length;
-      stats.draftSurveys = surveys.filter((s) => s.status === "Draft").length;
-
-      // Calculate time-based stats
-      const today = moment().startOf("day");
-      const weekStart = moment().startOf("week");
-      const monthStart = moment().startOf("month");
-
-      stats.todaySurveys = surveys.filter((s) =>
-        moment(s.created_at).isSameOrAfter(today)
-      ).length;
-
-      stats.weekSurveys = surveys.filter((s) =>
-        moment(s.created_at).isSameOrAfter(weekStart)
-      ).length;
-
-      stats.monthSurveys = surveys.filter((s) =>
-        moment(s.created_at).isSameOrAfter(monthStart)
-      ).length;
-
-      stats.newSurveysThisMonth = stats.monthSurveys;
+      // Update chart data
+      chartData.statusDistribution = response.data.charts.statusDistribution;
+      chartData.typeDistribution = response.data.charts.typeDistribution;
+      chartData.monthlyTrends = response.data.charts.monthlyTrends;
     }
-
-    // Mock user stats (in real app, this would be a separate API call)
-    stats.totalUsers = 25;
-    stats.activeUsers = 8;
   } catch (error) {
-    console.error("Failed to load stats:", error);
+    console.error("Failed to load dashboard stats:", error);
+    showToast("ไม่สามารถโหลดสถิติได้", "error");
   }
 };
 
 const loadRecentSurveys = async () => {
   surveysLoading.value = true;
   try {
-    const response = await api.get("/surveys", {
-      params: { limit: 6, page: 1 },
-    });
+    const response = await dashboardService.getRecentSurveys(6);
 
-    if (response.data.success) {
-      recentSurveys.value = response.data.data.surveys;
+    if (response.success) {
+      recentSurveys.value = response.data;
     }
   } catch (error) {
     console.error("Failed to load recent surveys:", error);
+    showToast("ไม่สามารถโหลดข้อมูลการสำรวจล่าสุดได้", "error");
   } finally {
     surveysLoading.value = false;
   }
 };
 
-const setChartPeriod = (period) => {
+const loadSystemNotifications = async () => {
+  try {
+    const response = await dashboardService.getSystemNotifications();
+
+    if (response.success) {
+      systemNotifications.value = response.data;
+    }
+  } catch (error) {
+    console.error("Failed to load system notifications:", error);
+    // Don't show error toast for notifications as it's not critical
+  }
+};
+
+const setChartPeriod = async (period) => {
   chartPeriod.value = period;
-  createTrendsChart();
+  chartsLoading.value = true;
+
+  try {
+    const months = period === "6months" ? 6 : 12;
+    const response = await dashboardService.getMonthlySurveyTrends(months);
+
+    if (response.success) {
+      chartData.monthlyTrends = response.data;
+      await createTrendsChart();
+    }
+  } catch (error) {
+    console.error("Failed to load trends:", error);
+    showToast("ไม่สามารถโหลดข้อมูลแนวโน้มได้", "error");
+  } finally {
+    chartsLoading.value = false;
+  }
 };
 
 const createStatusChart = async () => {
-  if (!hasStatusData.value || !statusChart.value) return;
+  if (
+    !hasStatusData.value ||
+    !statusChart.value ||
+    chartData.statusDistribution.length === 0
+  )
+    return;
 
   await nextTick();
 
@@ -745,18 +727,18 @@ const createStatusChart = async () => {
 
   const ctx = statusChart.value.getContext("2d");
 
+  const labels = chartData.statusDistribution.map((item) => item.label);
+  const data = chartData.statusDistribution.map((item) => item.value);
+  const colors = chartData.statusDistribution.map((item) => item.color);
+
   statusChartInstance = new Chart(ctx, {
     type: "doughnut",
     data: {
-      labels: ["อนุมัติแล้ว", "รอตรวจสอบ", "ร่าง"],
+      labels: labels,
       datasets: [
         {
-          data: [
-            stats.approvedSurveys,
-            stats.pendingSurveys,
-            stats.draftSurveys,
-          ],
-          backgroundColor: ["#28a745", "#ffc107", "#17a2b8"],
+          data: data,
+          backgroundColor: colors,
           borderWidth: 3,
           borderColor: "#fff",
           hoverBorderWidth: 4,
@@ -795,7 +777,7 @@ const createStatusChart = async () => {
 };
 
 const createTrendsChart = async () => {
-  if (!trendsChart.value) return;
+  if (!trendsChart.value || chartData.monthlyTrends.length === 0) return;
 
   await nextTick();
 
@@ -805,16 +787,8 @@ const createTrendsChart = async () => {
 
   const ctx = trendsChart.value.getContext("2d");
 
-  // Mock data for trends chart
-  const months = chartPeriod.value === "6months" ? 6 : 12;
-  const labels = [];
-  const data = [];
-
-  for (let i = months - 1; i >= 0; i--) {
-    const date = moment().subtract(i, "months");
-    labels.push(date.format("MMM YYYY"));
-    data.push(Math.floor(Math.random() * 20) + 5);
-  }
+  const labels = chartData.monthlyTrends.map((item) => item.month);
+  const data = chartData.monthlyTrends.map((item) => item.count);
 
   trendsChartInstance = new Chart(ctx, {
     type: "line",
@@ -867,51 +841,54 @@ const createTrendsChart = async () => {
 };
 
 const getStatusBadgeClass = (status) => {
-  const classes = {
-    Draft: "bg-secondary",
-    "Pending Review": "bg-warning text-dark",
-    Approved: "bg-success",
-    "Needs Revision": "bg-danger",
-  };
-  return classes[status] || "bg-secondary";
+  return dashboardService.getStatusBadgeClass(status);
 };
 
 const getStatusIcon = (status) => {
-  const icons = {
-    Draft: "bi bi-file-earmark",
-    "Pending Review": "bi bi-clock",
-    Approved: "bi bi-check-circle",
-    "Needs Revision": "bi bi-exclamation-triangle",
-  };
-  return icons[status] || "bi bi-file-earmark";
+  return dashboardService.getStatusIcon(status);
 };
 
 const getStatusText = (status) => {
-  const texts = {
-    Draft: "ร่าง",
-    "Pending Review": "รอตรวจสอบ",
-    Approved: "อนุมัติแล้ว",
-    "Needs Revision": "ต้องแก้ไข",
-  };
-  return texts[status] || status;
+  return dashboardService.getStatusText(status);
 };
 
 const formatDateRelative = (date) => {
   return moment(date).locale("th").fromNow();
 };
 
+// Auto-refresh functionality
+let refreshInterval = null;
+
+const startAutoRefresh = () => {
+  // Refresh every 5 minutes
+  refreshInterval = setInterval(() => {
+    loadDashboardStats();
+    loadRecentSurveys();
+    loadSystemNotifications();
+  }, 5 * 60 * 1000);
+};
+
+const stopAutoRefresh = () => {
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+    refreshInterval = null;
+  }
+};
+
 // Lifecycle
 onMounted(async () => {
   await refreshData();
+  startAutoRefresh();
 });
 
-// Watch for chart period changes
-watch(chartPeriod, () => {
-  chartsLoading.value = true;
-  setTimeout(() => {
-    createTrendsChart();
-    chartsLoading.value = false;
-  }, 300);
+onUnmounted(() => {
+  stopAutoRefresh();
+  if (statusChartInstance) {
+    statusChartInstance.destroy();
+  }
+  if (trendsChartInstance) {
+    trendsChartInstance.destroy();
+  }
 });
 </script>
 <style scoped>

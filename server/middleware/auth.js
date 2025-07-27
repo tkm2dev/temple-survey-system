@@ -32,12 +32,14 @@ const authenticateToken = async (req, res, next) => {
     const users = await executeQuery(
       `SELECT user_id, username, role, first_name, last_name, email, 
               is_active, approval_status FROM users WHERE user_id = ?`,
-      [decoded.userId]
+      [decoded.userId || decoded.user_id]
     );
 
     if (!users || users.length === 0) {
       console.log(
-        `❌ [AUTH MIDDLEWARE] User not found in database: ${decoded.userId}`
+        `❌ [AUTH MIDDLEWARE] User not found in database: ${
+          decoded.userId || decoded.user_id
+        }`
       );
       return res.status(401).json({
         success: false,

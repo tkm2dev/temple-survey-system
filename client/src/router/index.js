@@ -26,7 +26,6 @@ import UserCreate from "@/views/users/UserCreate.vue";
 import UserEdit from "@/views/users/UserEdit.vue";
 
 // Admin Pages
-import PendingUsersPage from "@/views/admin/PendingUsersPage.vue";
 import SystemSettingsPage from "@/views/admin/SystemSettingsPage.vue";
 
 // Master Data Pages
@@ -170,20 +169,6 @@ const routes = [
           breadcrumb: [
             { text: "หน้าแรก", to: "/" },
             { text: "จัดการผู้ใช้งาน" },
-          ],
-        },
-      },
-      {
-        path: "users/pending",
-        name: "PendingUsers",
-        component: PendingUsersPage,
-        meta: {
-          title: "ผู้ใช้งานที่รออนุมัติ",
-          roles: ["Admin"],
-          breadcrumb: [
-            { text: "หน้าแรก", to: "/" },
-            { text: "จัดการผู้ใช้งาน", to: "/users" },
-            { text: "รออนุมัติ" },
           ],
         },
       },
