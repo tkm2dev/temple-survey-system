@@ -305,6 +305,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, watch } from "vue";
+import { showSuccessToast, showErrorToast } from "@/utils/toast";
 
 // State
 const saving = ref(false);
@@ -368,7 +369,7 @@ const saveSettings = async () => {
     }, 3000);
   } catch (error) {
     console.error("Error saving settings:", error);
-    alert("เกิดข้อผิดพลาดในการบันทึกการตั้งค่า");
+    showErrorToast("เกิดข้อผิดพลาดในการบันทึกการตั้งค่า");
   } finally {
     saving.value = false;
   }
@@ -450,7 +451,7 @@ const exportData = async () => {
     URL.revokeObjectURL(url);
   } catch (error) {
     console.error("Error exporting data:", error);
-    alert("เกิดข้อผิดพลาดในการส่งออกข้อมูล");
+    showErrorToast("เกิดข้อผิดพลาดในการส่งออกข้อมูล");
   } finally {
     exporting.value = false;
   }
@@ -479,10 +480,10 @@ const clearCache = async () => {
     // Clear sessionStorage (but keep settings in localStorage)
     sessionStorage.clear();
 
-    alert("ล้างแคชเรียบร้อยแล้ว");
+    showSuccessToast("ล้างแคชเรียบร้อยแล้ว");
   } catch (error) {
     console.error("Error clearing cache:", error);
-    alert("เกิดข้อผิดพลาดในการล้างแคช");
+    showErrorToast("เกิดข้อผิดพลาดในการล้างแคช");
   } finally {
     clearing.value = false;
   }

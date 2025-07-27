@@ -474,6 +474,11 @@
 import { ref, reactive, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import userService from "@/services/userService";
+import {
+  showSuccessToast,
+  showErrorToast,
+  showConfirmToast,
+} from "@/utils/toast";
 import moment from "moment";
 
 const route = useRoute();
@@ -687,44 +692,43 @@ const changeApprovalStatus = async () => {
 };
 
 const resetPassword = async () => {
-  if (!confirm("คุณแน่ใจว่าต้องการรีเซ็ตรหัสผ่านผู้ใช้นี้?")) {
-    return;
-  }
+  showConfirmToast("คุณแน่ใจว่าต้องการรีเซ็ตรหัสผ่านผู้ใช้นี้?", async () => {
+    try {
+      resetLoading.value = true;
 
-  try {
-    resetLoading.value = true;
+      // Mock API call - in real app, this would call a reset password endpoint
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Mock API call - in real app, this would call a reset password endpoint
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    alert("รีเซ็ตรหัสผ่านสำเร็จ รหัสผ่านใหม่จะถูกส่งไปยังอีเมลของผู้ใช้");
-  } catch (error) {
-    console.error("Error resetting password:", error);
-    alert("เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน");
-  } finally {
-    resetLoading.value = false;
-  }
+      showSuccessToast(
+        "รีเซ็ตรหัสผ่านสำเร็จ รหัสผ่านใหม่จะถูกส่งไปยังอีเมลของผู้ใช้"
+      );
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      showErrorToast("เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน");
+    } finally {
+      resetLoading.value = false;
+    }
+  });
 };
 
 const deleteUser = async () => {
-  if (
-    !confirm("คุณแน่ใจว่าต้องการลบผู้ใช้นี้? การดำเนินการนี้ไม่สามารถยกเลิกได้")
-  ) {
-    return;
-  }
+  showConfirmToast(
+    "คุณแน่ใจว่าต้องการลบผู้ใช้นี้?<br><strong>การดำเนินการนี้ไม่สามารถยกเลิกได้</strong>",
+    async () => {
+      try {
+        actionLoading.value = true;
+        await userService.deleteUser(user.value.id);
 
-  try {
-    actionLoading.value = true;
-    await userService.deleteUser(user.value.id);
-
-    alert("ลบผู้ใช้สำเร็จ");
-    router.push("/users");
-  } catch (error) {
-    console.error("Error deleting user:", error);
-    alert("เกิดข้อผิดพลาดในการลบผู้ใช้");
-  } finally {
-    actionLoading.value = false;
-  }
+        showSuccessToast("ลบผู้ใช้สำเร็จ");
+        router.push("/users");
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        showErrorToast("เกิดข้อผิดพลาดในการลบผู้ใช้");
+      } finally {
+        actionLoading.value = false;
+      }
+    }
+  );
 };
 
 const goBack = () => {

@@ -199,3 +199,13 @@ uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 FOREIGN KEY (target_id) REFERENCES survey_targets(target_id) ON DELETE CASCADE,
 FOREIGN KEY (uploader_user_id) REFERENCES users(user_id)
 ) COMMENT 'ตารางเก็บไฟล์แนบของการสำรวจ';
+
+---
+
+เพิ่มเติม: ใช้ toasts แทน alerts
+
+#### เมื่อมีการ แก้ไขฟีเจอร์ใหม่ ให้ เพิ่ม commit message ที่ชัดเจนและมีรายละเอียด เช่น:
+
+```bash
+git commit -m "เพิ่มฟีเจอร์การนำทางระหว่างขั้นตอนในแบบฟอร์มสร้างแบบสำรวจ"
+```

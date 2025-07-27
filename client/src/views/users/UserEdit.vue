@@ -522,6 +522,7 @@
 import { ref, reactive, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import userService from "@/services/userService";
+import { showSuccessToast, showErrorToast } from "@/utils/toast";
 import moment from "moment";
 
 const route = useRoute();
@@ -573,7 +574,7 @@ const loadUser = async () => {
   const userId = route.params.id;
   if (!userId || userId === "undefined") {
     console.error("No valid user ID provided");
-    alert("ไม่พบรหัสผู้ใช้ที่ระบุ");
+    showErrorToast("ไม่พบรหัสผู้ใช้ที่ระบุ");
     router.push("/users");
     return;
   }
@@ -604,7 +605,7 @@ const loadUser = async () => {
     console.log("Form notes after loading:", form.notes);
   } catch (error) {
     console.error("Error loading user:", error);
-    alert("เกิดข้อผิดพลาดในการโหลดข้อมูลผู้ใช้");
+    showErrorToast("เกิดข้อผิดพลาดในการโหลดข้อมูลผู้ใช้");
     router.push("/users");
   } finally {
     initialLoading.value = false;

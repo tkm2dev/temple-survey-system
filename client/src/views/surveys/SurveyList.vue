@@ -1,5 +1,25 @@
 <template>
   <div class="survey-list-container">
+    <!-- Error State -->
+    <div
+      v-if="hasInitialLoadError"
+      class="alert alert-danger d-flex align-items-center mb-4"
+      role="alert"
+    >
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <div class="flex-grow-1">
+        <strong>เกิดข้อผิดพลาดในการโหลดข้อมูล</strong>
+        <p class="mb-0 mt-1">
+          ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้
+          กรุณาตรวจสอบการเชื่อมต่อหรือลองใหม่อีกครั้ง
+        </p>
+      </div>
+      <button class="btn btn-outline-danger btn-sm" @click="retryLoadData">
+        <i class="bi bi-arrow-clockwise"></i>
+        ลองใหม่
+      </button>
+    </div>
+
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
@@ -19,10 +39,51 @@
           <i class="bi bi-upload"></i>
           นำเข้าข้อมูล
         </button>
-        <button class="btn btn-info" @click="exportSurveys">
-          <i class="bi bi-download"></i>
-          ส่งออกข้อมูล
+        <button class="btn btn-outline-success" @click="downloadTemplate">
+          <i class="bi bi-file-earmark-arrow-down"></i>
+          Template
         </button>
+        <button class="btn btn-outline-secondary" @click="retryLoadData">
+          <i class="bi bi-arrow-clockwise"></i>
+          โหลดใหม่
+        </button>
+        <button class="btn btn-outline-info btn-sm" @click="checkAPIHealth">
+          <i class="bi bi-heart-pulse"></i>
+          API Status
+        </button>
+        <div class="btn-group">
+          <button class="btn btn-info" @click="exportSurveys">
+            <i class="bi bi-download"></i>
+            ส่งออกข้อมูล
+          </button>
+          <button
+            class="btn btn-info dropdown-toggle dropdown-toggle-split"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            <span class="visually-hidden">Toggle Dropdown</span>
+          </button>
+          <ul class="dropdown-menu">
+            <li>
+              <a
+                class="dropdown-item"
+                href="#"
+                @click.prevent="exportSurveys('xlsx')"
+              >
+                <i class="bi bi-file-earmark-excel"></i> Excel (.xlsx)
+              </a>
+            </li>
+            <li>
+              <a
+                class="dropdown-item"
+                href="#"
+                @click.prevent="exportSurveys('csv')"
+              >
+                <i class="bi bi-file-earmark-text"></i> CSV (.csv)
+              </a>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
 
@@ -114,6 +175,14 @@
                 v-if="searchQuery"
               >
                 <i class="bi bi-x"></i>
+              </button>
+              <button
+                class="btn btn-outline-primary"
+                type="button"
+                @click="showAdvancedSearch"
+                title="ค้นหาขั้นสูง"
+              >
+                <i class="bi bi-funnel"></i>
               </button>
             </div>
           </div>
@@ -640,6 +709,192 @@
       </div>
     </div>
   </div>
+
+  <!-- Advanced Search Modal -->
+  <div
+    class="modal fade"
+    id="advancedSearchModal"
+    tabindex="-1"
+    aria-labelledby="advancedSearchModalLabel"
+    aria-hidden="true"
+    ref="advancedSearchModal"
+  >
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="advancedSearchModalLabel">
+            <i class="bi bi-funnel"></i>
+            ค้นหาขั้นสูง
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <form @submit.prevent="performAdvancedSearch">
+            <div class="row g-3">
+              <!-- Basic Search -->
+              <div class="col-12">
+                <label class="form-label">คำค้นหา</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  v-model="advancedSearchForm.query"
+                  placeholder="ค้นหาในชื่อเป้าหมาย, ที่อยู่, หรือรายละเอียด..."
+                />
+              </div>
+
+              <!-- Date Range -->
+              <div class="col-md-6">
+                <label class="form-label">วันที่เริ่มต้น</label>
+                <input
+                  type="date"
+                  class="form-control"
+                  v-model="advancedSearchForm.dateFrom"
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">วันที่สิ้นสุด</label>
+                <input
+                  type="date"
+                  class="form-control"
+                  v-model="advancedSearchForm.dateTo"
+                />
+              </div>
+
+              <!-- Status and Type -->
+              <div class="col-md-6">
+                <label class="form-label">สถานะ</label>
+                <select class="form-select" v-model="advancedSearchForm.status">
+                  <option value="">ทุกสถานะ</option>
+                  <option value="Draft">ร่าง</option>
+                  <option value="Pending Review">รอตรวจสอบ</option>
+                  <option value="Approved">อนุมัติแล้ว</option>
+                  <option value="Needs Revision">ต้องแก้ไข</option>
+                  <option value="Completed">เสร็จสิ้น</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">ประเภท</label>
+                <select
+                  class="form-select"
+                  v-model="advancedSearchForm.type_id"
+                >
+                  <option value="">ทุกประเภท</option>
+                  <option
+                    v-for="type in surveyTypes"
+                    :key="type.id"
+                    :value="type.id"
+                  >
+                    {{ type.name }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Location -->
+              <div class="col-md-6">
+                <label class="form-label">จังหวัด</label>
+                <select
+                  class="form-select"
+                  v-model="advancedSearchForm.province"
+                >
+                  <option value="">ทุกจังหวัด</option>
+                  <option
+                    v-for="province in provinces"
+                    :key="province"
+                    :value="province"
+                  >
+                    {{ province }}
+                  </option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">อำเภอ</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  v-model="advancedSearchForm.district"
+                  placeholder="ระบุอำเภอ..."
+                />
+              </div>
+
+              <!-- Surveyor -->
+              <div class="col-12">
+                <label class="form-label">ผู้สำรวจ</label>
+                <select
+                  class="form-select"
+                  v-model="advancedSearchForm.surveyor_id"
+                >
+                  <option value="">ทุกผู้สำรวจ</option>
+                  <option
+                    v-for="surveyor in surveyors"
+                    :key="surveyor.id"
+                    :value="surveyor.id"
+                  >
+                    {{ surveyor.name }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Progress Range -->
+              <div class="col-md-6">
+                <label class="form-label">ความคืบหน้าต่ำสุด (%)</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  v-model="advancedSearchForm.progressMin"
+                  min="0"
+                  max="100"
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">ความคืบหน้าสูงสุด (%)</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  v-model="advancedSearchForm.progressMax"
+                  min="0"
+                  max="100"
+                />
+              </div>
+
+              <!-- Tags -->
+              <div class="col-12">
+                <label class="form-label">แท็ก</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  v-model="advancedSearchForm.tags"
+                  placeholder="แท็ก (คั่นด้วยเครื่องหมายจุลภาค)"
+                />
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            @click="clearAdvancedSearch"
+          >
+            <i class="bi bi-arrow-counterclockwise"></i>
+            ล้างค่า
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            @click="performAdvancedSearch"
+          >
+            <i class="bi bi-search"></i>
+            ค้นหา
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -647,7 +902,15 @@ import { ref, reactive, computed, onMounted, watch } from "vue";
 import { useAuthStore } from "@/stores/auth";
 import api from "@/services/api";
 import surveyService from "@/services/surveyService";
+import {
+  showSuccessToast,
+  showErrorToast,
+  showInfoToast,
+  showConfirmToast,
+  showWarningToast,
+} from "@/utils/toast";
 import moment from "moment";
+import { Modal } from "bootstrap";
 
 // Debounce utility
 function debounce(func, wait) {
@@ -672,6 +935,7 @@ export default {
     const surveyTypes = ref([]);
     const provinces = ref([]);
     const loading = ref(false);
+    const hasInitialLoadError = ref(false);
     const viewMode = ref("table");
     const selectedItems = ref([]);
     const bulkOperationLoading = ref(false);
@@ -679,7 +943,6 @@ export default {
     const searchQuery = ref("");
     const sortField = ref("");
     const sortDirection = ref("asc");
-    const toasts = ref([]);
 
     // Statistics
     const statistics = reactive({
@@ -697,6 +960,24 @@ export default {
       province: "",
       created_by: "",
     });
+
+    // Advanced Search
+    const advancedSearchForm = reactive({
+      query: "",
+      status: "",
+      type_id: "",
+      province: "",
+      district: "",
+      surveyor_id: "",
+      dateFrom: "",
+      dateTo: "",
+      progressMin: "",
+      progressMax: "",
+      tags: "",
+    });
+
+    const surveyors = ref([]);
+    const advancedSearchModal = ref(null);
 
     // Pagination
     const pagination = reactive({
@@ -751,23 +1032,77 @@ export default {
     // Methods
     const loadSurveyTypes = async () => {
       try {
+        console.log("🔄 [FRONTEND] Loading survey types...");
         const response = await api.get("/master-data/survey-types");
+        console.log("✅ [FRONTEND] Survey types response:", response.data);
         if (response.data.success) {
           surveyTypes.value = response.data.data;
         }
       } catch (error) {
-        console.error("Failed to load survey types:", error);
+        console.error("❌ [FRONTEND] Failed to load survey types:", error);
+        // Fallback data เมื่อไม่สามารถโหลดจาก API ได้
+        surveyTypes.value = [
+          { id: 1, name: "การสำรวจพื้นฐาน" },
+          { id: 2, name: "การสำรวจขั้นสูง" },
+          { id: 3, name: "การสำรวจพิเศษ" },
+        ];
+        showWarningToast("ไม่สามารถโหลดประเภทการสำรวจได้ ใช้ข้อมูลพื้นฐาน");
       }
     };
 
     const loadProvinces = async () => {
       try {
+        console.log("🔄 [FRONTEND] Loading provinces...");
         const response = await api.get("/master-data/provinces");
+        console.log("✅ [FRONTEND] Provinces response:", response.data);
         if (response.data.success) {
           provinces.value = response.data.data;
         }
       } catch (error) {
-        console.error("Failed to load provinces:", error);
+        console.error("❌ [FRONTEND] Failed to load provinces:", error);
+        // Fallback data เมื่อไม่สามารถโหลดจาก API ได้
+        provinces.value = [
+          "กรุงเทพมหานคร",
+          "เชียงใหม่",
+          "เชียงราย",
+          "ลำปาง",
+          "ลำพูน",
+          "แม่ฮ่องสอน",
+          "น่าน",
+          "พะเยา",
+          "แพร่",
+          "อุตรดิตถ์",
+          "ตาก",
+          "สุโขทัย",
+          "พิษณุโลก",
+          "พิจิตร",
+          "เพชรบูรณ์",
+          "อุทัยธานี",
+          "นครสวรรค์",
+          "กำแพงเพชร",
+          "ชัยนาท",
+        ];
+        showWarningToast("ไม่สามารถโหลดข้อมูลจังหวัดได้ ใช้ข้อมูลพื้นฐาน");
+      }
+    };
+
+    const loadSurveyors = async () => {
+      try {
+        console.log("🔄 [FRONTEND] Loading surveyors...");
+        const response = await api.get("/master-data/surveyors");
+        console.log("✅ [FRONTEND] Surveyors response:", response.data);
+        if (response.data.success) {
+          surveyors.value = response.data.data;
+        }
+      } catch (error) {
+        console.error("❌ [FRONTEND] Failed to load surveyors:", error);
+        // Fallback data เมื่อไม่สามารถโหลดจาก API ได้
+        surveyors.value = [
+          { id: 1, name: "ผู้สำรวจ 1" },
+          { id: 2, name: "ผู้สำรวจ 2" },
+          { id: 3, name: "ผู้สำรวจ 3" },
+        ];
+        showWarningToast("ไม่สามารถโหลดข้อมูลผู้สำรวจได้ ใช้ข้อมูลพื้นฐาน");
       }
     };
 
@@ -777,6 +1112,14 @@ export default {
         Object.assign(statistics, response);
       } catch (error) {
         console.error("Failed to load statistics:", error);
+        // Fallback data เมื่อไม่สามารถโหลดจาก API ได้
+        Object.assign(statistics, {
+          total: 0,
+          completed: 0,
+          inProgress: 0,
+          draft: 0,
+        });
+        showWarningToast("ไม่สามารถโหลดสถิติได้ แสดงข้อมูลเริ่มต้น");
       }
     };
 
@@ -822,7 +1165,7 @@ export default {
       } catch (error) {
         console.error("Failed to load surveys:", error);
         surveys.value = [];
-        showToast("error", "เกิดข้อผิดพลาด", "ไม่สามารถโหลดข้อมูลแบบสำรวจได้");
+        showErrorToast("ไม่สามารถโหลดข้อมูลแบบสำรวจได้");
       } finally {
         loading.value = false;
       }
@@ -884,16 +1227,14 @@ export default {
 
     const bulkUpdateStatus = async (status) => {
       if (selectedItems.value.length === 0) {
-        showToast("warning", "แจ้งเตือน", "กรุณาเลือกรายการที่ต้องการอัปเดต");
+        showWarningToast("กรุณาเลือกรายการที่ต้องการอัปเดต");
         return;
       }
 
       try {
         bulkOperationLoading.value = true;
         await surveyService.bulkUpdateStatus(selectedItems.value, status);
-        showToast(
-          "success",
-          "สำเร็จ",
+        showSuccessToast(
           `อัปเดตสถานะ ${selectedItems.value.length} รายการเรียบร้อยแล้ว`
         );
         selectedItems.value = [];
@@ -901,7 +1242,7 @@ export default {
         await loadStatistics();
       } catch (error) {
         console.error("Bulk status update failed:", error);
-        showToast("error", "เกิดข้อผิดพลาด", "ไม่สามารถอัปเดตสถานะได้");
+        showErrorToast("ไม่สามารถอัปเดตสถานะได้");
       } finally {
         bulkOperationLoading.value = false;
       }
@@ -909,22 +1250,18 @@ export default {
 
     const bulkAssignSurveyor = async () => {
       if (selectedItems.value.length === 0) {
-        showToast("warning", "แจ้งเตือน", "กรุณาเลือกรายการที่ต้องการมอบหมาย");
+        showWarningToast("กรุณาเลือกรายการที่ต้องการมอบหมาย");
         return;
       }
 
       // This would typically open a modal to select surveyor
       // For now, we'll show a placeholder message
-      showToast(
-        "info",
-        "ฟีเจอร์กำลังพัฒนา",
-        "ฟีเจอร์มอบหมายผู้สำรวจกำลังอยู่ระหว่างการพัฒนา"
-      );
+      showInfoToast("ฟีเจอร์มอบหมายผู้สำรวจกำลังอยู่ระหว่างการพัฒนา");
     };
 
     const bulkExport = async () => {
       if (selectedItems.value.length === 0) {
-        showToast("warning", "แจ้งเตือน", "กรุณาเลือกรายการที่ต้องการส่งออก");
+        showWarningToast("กรุณาเลือกรายการที่ต้องการส่งออก");
         return;
       }
 
@@ -944,15 +1281,13 @@ export default {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
 
-        showToast(
-          "success",
-          "สำเร็จ",
+        showSuccessToast(
           `ส่งออกข้อมูล ${selectedItems.value.length} รายการเรียบร้อยแล้ว`
         );
         selectedItems.value = [];
       } catch (error) {
         console.error("Bulk export failed:", error);
-        showToast("error", "เกิดข้อผิดพลาด", "ไม่สามารถส่งออกข้อมูลได้");
+        showErrorToast("ไม่สามารถส่งออกข้อมูลได้");
       } finally {
         bulkOperationLoading.value = false;
       }
@@ -960,87 +1295,199 @@ export default {
 
     const bulkDelete = async () => {
       if (selectedItems.value.length === 0) {
-        showToast("warning", "แจ้งเตือน", "กรุณาเลือกรายการที่ต้องการลบ");
+        showErrorToast("กรุณาเลือกรายการที่ต้องการลบ");
         return;
       }
 
-      if (
-        !confirm(
-          `คุณต้องการลบแบบสำรวจ ${selectedItems.value.length} รายการใช่หรือไม่?`
-        )
-      ) {
-        return;
-      }
-
-      try {
-        bulkOperationLoading.value = true;
-        await surveyService.bulkDelete(selectedItems.value);
-        showToast(
-          "success",
-          "สำเร็จ",
-          `ลบข้อมูล ${selectedItems.value.length} รายการเรียบร้อยแล้ว`
-        );
-        selectedItems.value = [];
-        await loadSurveys(pagination.currentPage);
-        await loadStatistics();
-      } catch (error) {
-        console.error("Bulk delete failed:", error);
-        showToast("error", "เกิดข้อผิดพลาด", "ไม่สามารถลบข้อมูลได้");
-      } finally {
-        bulkOperationLoading.value = false;
-      }
+      showConfirmToast(
+        `คุณต้องการลบแบบสำรวจ ${selectedItems.value.length} รายการใช่หรือไม่?<br><strong>การดำเนินการนี้ไม่สามารถยกเลิกได้</strong>`,
+        async () => {
+          try {
+            bulkOperationLoading.value = true;
+            await surveyService.bulkDelete(selectedItems.value);
+            showSuccessToast(
+              `ลบข้อมูล ${selectedItems.value.length} รายการเรียบร้อยแล้ว`
+            );
+            selectedItems.value = [];
+            await loadSurveys(pagination.currentPage);
+            await loadStatistics();
+          } catch (error) {
+            console.error("Bulk delete failed:", error);
+            showErrorToast("ไม่สามารถลบข้อมูลได้");
+          } finally {
+            bulkOperationLoading.value = false;
+          }
+        }
+      );
     };
 
     // Single item operations
     const deleteSurvey = async (surveyId) => {
-      if (!confirm("คุณต้องการลบแบบสำรวจนี้ใช่หรือไม่?")) {
-        return;
-      }
-
-      try {
-        deleteLoading.value[surveyId] = true;
-        await surveyService.deleteSurvey(surveyId);
-        showToast("success", "สำเร็จ", "ลบแบบสำรวจเรียบร้อยแล้ว");
-        await loadSurveys(pagination.currentPage);
-        await loadStatistics();
-      } catch (error) {
-        console.error("Delete failed:", error);
-        showToast("error", "เกิดข้อผิดพลาด", "ไม่สามารถลบแบบสำรวจได้");
-      } finally {
-        delete deleteLoading.value[surveyId];
-      }
+      showConfirmToast(
+        "คุณต้องการลบแบบสำรวจนี้ใช่หรือไม่?<br><strong>การดำเนินการนี้ไม่สามารถยกเลิกได้</strong>",
+        async () => {
+          try {
+            deleteLoading.value[surveyId] = true;
+            await surveyService.deleteSurvey(surveyId);
+            showSuccessToast("ลบแบบสำรวจเรียบร้อยแล้ว");
+            await loadSurveys(pagination.currentPage);
+            await loadStatistics();
+          } catch (error) {
+            console.error("Delete failed:", error);
+            showErrorToast("ไม่สามารถลบแบบสำรวจได้");
+          } finally {
+            delete deleteLoading.value[surveyId];
+          }
+        }
+      );
     };
 
     // Export/Import operations
-    const exportSurveys = async () => {
+    const exportSurveys = async (format = "xlsx") => {
       try {
-        const blob = await surveyService.exportAll();
+        showInfoToast("กำลังเตรียมข้อมูลสำหรับส่งออก...");
+        const blob = await surveyService.exportAll(filters.value, format);
 
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
         link.download = `all_surveys_${
           new Date().toISOString().split("T")[0]
-        }.xlsx`;
+        }.${format}`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
 
-        showToast("success", "สำเร็จ", "ส่งออกข้อมูลทั้งหมดเรียบร้อยแล้ว");
+        showSuccessToast(
+          `ส่งออกข้อมูลทั้งหมดเรียบร้อยแล้ว (${format.toUpperCase()})`
+        );
       } catch (error) {
         console.error("Export failed:", error);
-        showToast("error", "เกิดข้อผิดพลาด", "ไม่สามารถส่งออกข้อมูลได้");
+        showErrorToast("ไม่สามารถส่งออกข้อมูลได้");
+      }
+    };
+
+    const downloadTemplate = async () => {
+      try {
+        showInfoToast("กำลังดาวน์โหลด Template...");
+        const blob = await surveyService.getImportTemplate();
+
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "survey_import_template.xlsx";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        showSuccessToast("ดาวน์โหลด Template สำเร็จ");
+      } catch (error) {
+        console.error("Template download failed:", error);
+        showErrorToast("ไม่สามารถดาวน์โหลด Template ได้");
       }
     };
 
     const showImportModal = () => {
-      // This would typically open an import modal
-      showToast(
-        "info",
-        "ฟีเจอร์กำลังพัฒนา",
-        "ฟีเจอร์นำเข้าข้อมูลกำลังอยู่ระหว่างการพัฒนา"
-      );
+      // Create file input
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.accept = ".xlsx,.xls,.csv";
+      fileInput.style.display = "none";
+
+      fileInput.onchange = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+          showInfoToast("กำลังนำเข้าข้อมูล...");
+          await surveyService.importSurveys(formData);
+          showSuccessToast("นำเข้าข้อมูลสำเร็จ");
+          await loadSurveys(pagination.currentPage);
+          await loadStatistics();
+        } catch (error) {
+          console.error("Import failed:", error);
+          showErrorToast("ไม่สามารถนำเข้าข้อมูลได้");
+        }
+      };
+
+      document.body.appendChild(fileInput);
+      fileInput.click();
+      document.body.removeChild(fileInput);
+    };
+
+    // Advanced Search Functions
+    const showAdvancedSearch = () => {
+      const modal = new Modal(advancedSearchModal.value);
+      modal.show();
+    };
+
+    const performAdvancedSearch = async () => {
+      try {
+        loading.value = true;
+
+        // Convert form data to search criteria
+        const searchCriteria = {};
+
+        if (advancedSearchForm.query)
+          searchCriteria.query = advancedSearchForm.query;
+        if (advancedSearchForm.status)
+          searchCriteria.status = advancedSearchForm.status;
+        if (advancedSearchForm.type_id)
+          searchCriteria.type_id = advancedSearchForm.type_id;
+        if (advancedSearchForm.province)
+          searchCriteria.province = advancedSearchForm.province;
+        if (advancedSearchForm.district)
+          searchCriteria.district = advancedSearchForm.district;
+        if (advancedSearchForm.surveyor_id)
+          searchCriteria.surveyor_id = advancedSearchForm.surveyor_id;
+        if (advancedSearchForm.dateFrom)
+          searchCriteria.dateFrom = advancedSearchForm.dateFrom;
+        if (advancedSearchForm.dateTo)
+          searchCriteria.dateTo = advancedSearchForm.dateTo;
+        if (advancedSearchForm.progressMin !== "")
+          searchCriteria.progressMin = advancedSearchForm.progressMin;
+        if (advancedSearchForm.progressMax !== "")
+          searchCriteria.progressMax = advancedSearchForm.progressMax;
+        if (advancedSearchForm.tags)
+          searchCriteria.tags = advancedSearchForm.tags
+            .split(",")
+            .map((tag) => tag.trim());
+
+        const response = await surveyService.advancedSearch(searchCriteria);
+
+        if (response.success) {
+          surveys.value = response.data.data || [];
+          pagination.totalRecords = response.data.total || 0;
+          pagination.totalPages = Math.ceil(
+            pagination.totalRecords / pagination.itemsPerPage
+          );
+          pagination.currentPage = 1;
+
+          showSuccessToast(`พบข้อมูล ${surveys.value.length} รายการ`);
+        } else {
+          showErrorToast("ไม่สามารถค้นหาข้อมูลได้");
+        }
+
+        // Hide modal
+        const modal = Modal.getInstance(advancedSearchModal.value);
+        modal.hide();
+      } catch (error) {
+        console.error("Advanced search failed:", error);
+        showErrorToast("เกิดข้อผิดพลาดในการค้นหา");
+      } finally {
+        loading.value = false;
+      }
+    };
+
+    const clearAdvancedSearch = () => {
+      Object.keys(advancedSearchForm).forEach((key) => {
+        advancedSearchForm[key] = "";
+      });
     };
 
     // Sorting
@@ -1105,44 +1552,84 @@ export default {
       return moment(date).locale("th").format("DD MMM YYYY");
     };
 
-    // Toast notification system
-    const showToast = (type, title, message) => {
-      const toast = {
-        id: Date.now(),
-        type,
-        title,
-        message,
-        icon: getToastIcon(type),
-      };
-      toasts.value.push(toast);
-      setTimeout(() => removeToast(toast.id), 5000);
+    // API Health Check
+    const checkAPIHealth = async () => {
+      try {
+        console.log("🏥 [FRONTEND] Checking API health...");
+        const response = await api.get("/master-data/health");
+        console.log("✅ [FRONTEND] API Health:", response.data);
+        return true;
+      } catch (error) {
+        console.error("❌ [FRONTEND] API Health check failed:", error);
+        return false;
+      }
     };
 
-    const getToastIcon = (type) => {
-      const icons = {
-        success: "bi bi-check-circle text-success",
-        error: "bi bi-x-circle text-danger",
-        warning: "bi bi-exclamation-triangle text-warning",
-        info: "bi bi-info-circle text-info",
-      };
-      return icons[type] || "bi bi-info-circle";
-    };
+    // Retry mechanism
+    const retryLoadData = async () => {
+      hasInitialLoadError.value = false;
+      showInfoToast("กำลังโหลดข้อมูลใหม่...");
+      try {
+        const results = await Promise.allSettled([
+          loadSurveyTypes(),
+          loadProvinces(),
+          loadSurveyors(),
+          loadStatistics(),
+          loadSurveys(pagination.currentPage),
+        ]);
 
-    const removeToast = (id) => {
-      const index = toasts.value.findIndex((toast) => toast.id === id);
-      if (index > -1) {
-        toasts.value.splice(index, 1);
+        // ตรวจสอบว่ามี API ไหน fail หรือไม่
+        const failedCount = results.filter(
+          (result) => result.status === "rejected"
+        ).length;
+
+        if (failedCount === 0) {
+          showSuccessToast("โหลดข้อมูลเรียบร้อยแล้ว");
+        } else if (failedCount < results.length) {
+          showWarningToast(
+            `โหลดข้อมูลบางส่วนไม่สำเร็จ (${failedCount}/${results.length})`
+          );
+        } else {
+          hasInitialLoadError.value = true;
+          showErrorToast("ไม่สามารถโหลดข้อมูลได้");
+        }
+      } catch (error) {
+        console.error("Error during retry:", error);
+        hasInitialLoadError.value = true;
+        showErrorToast("ยังคงมีปัญหาในการโหลดข้อมูล");
       }
     };
 
     // Lifecycle
     onMounted(async () => {
-      await Promise.all([
-        loadSurveyTypes(),
-        loadProvinces(),
-        loadStatistics(),
-        loadSurveys(),
-      ]);
+      // โหลดข้อมูลแบบไม่ blocking - ถ้า API ไหน fail ก็ไม่หยุดการทำงานของ API อื่น
+      try {
+        const results = await Promise.allSettled([
+          loadSurveyTypes(),
+          loadProvinces(),
+          loadSurveyors(),
+          loadStatistics(),
+          loadSurveys(),
+        ]);
+
+        // ตรวจสอบว่ามี API ไหน fail หรือไม่
+        const failedCount = results.filter(
+          (result) => result.status === "rejected"
+        ).length;
+
+        if (failedCount > 0) {
+          if (failedCount === results.length) {
+            hasInitialLoadError.value = true;
+          }
+          console.warn(
+            `${failedCount}/${results.length} APIs failed during initialization`
+          );
+        }
+      } catch (error) {
+        console.error("Error during initialization:", error);
+        hasInitialLoadError.value = true;
+        showErrorToast("เกิดข้อผิดพลาดในการโหลดข้อมูล");
+      }
     });
 
     return {
@@ -1151,6 +1638,7 @@ export default {
       surveyTypes,
       provinces,
       loading,
+      hasInitialLoadError,
       viewMode,
       selectedItems,
       bulkOperationLoading,
@@ -1158,7 +1646,6 @@ export default {
       searchQuery,
       sortField,
       sortDirection,
-      toasts,
       statistics,
       filters,
       pagination,
@@ -1166,6 +1653,8 @@ export default {
       isIndeterminate,
       visiblePages,
       loadSurveys,
+      retryLoadData,
+      checkAPIHealth,
       debounceSearch,
       applyFilters,
       clearSearch,
@@ -1179,7 +1668,14 @@ export default {
       bulkDelete,
       deleteSurvey,
       exportSurveys,
+      downloadTemplate,
       showImportModal,
+      showAdvancedSearch,
+      performAdvancedSearch,
+      clearAdvancedSearch,
+      advancedSearchForm,
+      advancedSearchModal,
+      surveyors,
       sortBy,
       getSortClass,
       canEdit,
@@ -1187,8 +1683,6 @@ export default {
       getStatusIcon,
       getStatusText,
       formatDate,
-      showToast,
-      removeToast,
     };
   },
 };

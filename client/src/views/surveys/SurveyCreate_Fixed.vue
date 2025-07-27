@@ -6,20 +6,7 @@
         <router-link to="/surveys" class="btn btn-link p-0 me-3">
           <i class="bi bi-arrow-left fs-5"></i>
         </router-link>
-        <div class="flex-grow-1">
-          <h5 class="mb-0">สร้างแบบสำรวจใหม่</h5>
-          <small class="text-muted"
-            >ขั้นตอนที่ {{ currentFormStep }} จาก 4</small
-          >
-        </div>
-        <div class="text-end">
-          <div class="progress" style="width: 60px; height: 4px">
-            <div
-              class="progress-bar bg-success"
-              :style="{ width: `${(currentFormStep / 4) * 100}%` }"
-            ></div>
-          </div>
-        </div>
+        <h5 class="mb-0 flex-grow-1">สร้างแบบสำรวจใหม่</h5>
       </div>
     </div>
 
@@ -250,7 +237,7 @@
                     </h6>
                     <button
                       type="button"
-                      class="btn btn-primary btn-sm"
+                      class="btn btn-outline-primary btn-sm"
                       @click="getCurrentLocation"
                       :disabled="gettingLocation"
                     >
@@ -265,25 +252,6 @@
                           : "ใช้ตำแหน่งปัจจุบัน"
                       }}
                     </button>
-                  </div>
-
-                  <!-- Location Status -->
-                  <div
-                    v-if="form.latitude && form.longitude"
-                    class="alert alert-success py-2 mb-3"
-                  >
-                    <div class="d-flex align-items-center">
-                      <i class="bi bi-check-circle-fill me-2"></i>
-                      <small>พิกัดถูกบันทึกแล้ว</small>
-                      <a
-                        :href="`https://www.google.com/maps?q=${form.latitude},${form.longitude}`"
-                        target="_blank"
-                        class="btn btn-outline-success btn-sm ms-auto"
-                      >
-                        <i class="bi bi-map me-1"></i>
-                        ดูแผนที่
-                      </a>
-                    </div>
                   </div>
 
                   <div class="row">
@@ -312,18 +280,6 @@
                         />
                         <label for="longitude">ลองจิจูด</label>
                       </div>
-                    </div>
-                  </div>
-
-                  <!-- Location Tips for Mobile -->
-                  <div class="d-md-none mt-3">
-                    <div class="alert alert-info py-2">
-                      <small>
-                        <i class="bi bi-lightbulb me-1"></i>
-                        <strong>คำแนะนำ:</strong>
-                        เปิดการให้สิทธิ์ตำแหน่งในเบราว์เซอร์เพื่อใช้งาน GPS
-                        อัตโนมัติ
-                      </small>
                     </div>
                   </div>
                 </div>
@@ -496,67 +452,21 @@
               ไฟล์แนบ
             </h6>
 
-            <!-- Mobile-First Upload Options -->
-            <div class="d-md-none mb-3">
-              <div class="row g-2">
-                <div class="col-6">
-                  <button
-                    type="button"
-                    class="btn btn-outline-primary w-100 py-3"
-                    @click="$refs.cameraInput.click()"
-                  >
-                    <i class="bi bi-camera-fill d-block fs-3 mb-2"></i>
-                    <small>ถ่าย<br />ภาพใหม่</small>
-                  </button>
+            <div class="row">
+              <div class="col-12">
+                <div class="mb-3">
+                  <label for="files" class="form-label">อัปโลดไฟล์</label>
                   <input
-                    ref="cameraInput"
                     @change="handleFileUpload"
                     type="file"
-                    class="d-none"
-                    accept="image/*"
-                    capture="environment"
+                    class="form-control form-control-lg"
+                    id="files"
                     multiple
-                  />
-                </div>
-                <div class="col-6">
-                  <button
-                    type="button"
-                    class="btn btn-outline-secondary w-100 py-3"
-                    @click="$refs.galleryInput.click()"
-                  >
-                    <i class="bi bi-images d-block fs-3 mb-2"></i>
-                    <small>เลือกจาก<br />คลังภาพ</small>
-                  </button>
-                  <input
-                    ref="galleryInput"
-                    @change="handleFileUpload"
-                    type="file"
-                    class="d-none"
                     accept="image/*,.pdf,.doc,.docx"
-                    multiple
                   />
-                </div>
-              </div>
-            </div>
-
-            <!-- Desktop Upload -->
-            <div class="d-none d-md-block">
-              <div class="row">
-                <div class="col-12">
-                  <div class="mb-3">
-                    <label for="files" class="form-label">อัปโลดไฟล์</label>
-                    <input
-                      @change="handleFileUpload"
-                      type="file"
-                      class="form-control form-control-lg"
-                      id="files"
-                      multiple
-                      accept="image/*,.pdf,.doc,.docx"
-                    />
-                    <div class="form-text">
-                      รองรับไฟล์ประเภท: รูปภาพ, PDF, Word (ขนาดไม่เกิน 5MB
-                      ต่อไฟล์)
-                    </div>
+                  <div class="form-text">
+                    รองรับไฟล์ประเภท: รูปภาพ, PDF, Word (ขนาดไม่เกิน 5MB
+                    ต่อไฟล์)
                   </div>
                 </div>
               </div>
@@ -565,81 +475,29 @@
             <!-- File Preview -->
             <div v-if="files.length > 0" class="row">
               <div class="col-12">
-                <h6>ไฟล์ที่เลือก ({{ files.length }} ไฟล์):</h6>
-
-                <!-- Mobile File List -->
-                <div class="d-md-none">
+                <h6>ไฟล์ที่เลือก:</h6>
+                <div class="list-group">
                   <div
                     v-for="(file, index) in files"
                     :key="`file-${index}`"
-                    class="card mb-2"
+                    class="list-group-item d-flex justify-content-between align-items-center"
                   >
-                    <div class="card-body py-2">
-                      <div class="d-flex align-items-center">
-                        <div class="me-3">
-                          <i
-                            :class="getFileIcon(file.type)"
-                            class="fs-5 text-primary"
-                          ></i>
-                        </div>
-                        <div class="flex-grow-1">
-                          <div class="fw-medium text-truncate">
-                            {{ file.name }}
-                          </div>
-                          <small class="text-muted">{{
-                            formatFileSize(file.size)
-                          }}</small>
-                        </div>
-                        <button
-                          type="button"
-                          class="btn btn-outline-danger btn-sm"
-                          @click="removeFile(index)"
-                        >
-                          <i class="bi bi-trash"></i>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Desktop File List -->
-                <div class="d-none d-md-block">
-                  <div class="list-group">
-                    <div
-                      v-for="(file, index) in files"
-                      :key="`file-${index}`"
-                      class="list-group-item d-flex justify-content-between align-items-center"
-                    >
-                      <div>
-                        <i
-                          :class="getFileIcon(file.type)"
-                          class="me-2 text-primary"
-                        ></i>
-                        {{ file.name }}
-                        <small class="text-muted ms-2"
-                          >({{ formatFileSize(file.size) }})</small
-                        >
-                      </div>
-                      <button
-                        type="button"
-                        class="btn btn-outline-danger btn-sm"
-                        @click="removeFile(index)"
+                    <div>
+                      <i class="bi bi-file-earmark me-2 text-primary"></i>
+                      {{ file.name }}
+                      <small class="text-muted ms-2"
+                        >({{ formatFileSize(file.size) }})</small
                       >
-                        <i class="bi bi-trash"></i>
-                      </button>
                     </div>
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger btn-sm"
+                      @click="removeFile(index)"
+                    >
+                      <i class="bi bi-trash"></i>
+                    </button>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <!-- Mobile Upload Tip -->
-            <div class="d-md-none mt-3">
-              <div class="alert alert-light py-2">
-                <small class="text-muted">
-                  <i class="bi bi-info-circle me-1"></i>
-                  สามารถอัปโลดได้หลายไฟล์ในครั้งเดียว
-                </small>
               </div>
             </div>
           </div>
@@ -691,33 +549,6 @@
         </div>
       </div>
     </form>
-
-    <!-- Mobile Step Navigation (Bottom Tabs) -->
-    <div class="d-md-none bg-white border-top fixed-bottom">
-      <div class="row g-0">
-        <div v-for="step in 4" :key="step" class="col-3">
-          <button
-            type="button"
-            class="btn w-100 py-3 border-0 rounded-0"
-            :class="{
-              'btn-primary text-white': currentFormStep === step,
-              'btn-light text-muted': currentFormStep !== step,
-              disabled: step > maxCompletedStep + 1,
-            }"
-            @click="goToStep(step)"
-            :disabled="step > maxCompletedStep + 1"
-          >
-            <div class="d-flex flex-column align-items-center">
-              <i :class="getStepIcon(step)" class="fs-6 mb-1"></i>
-              <small style="font-size: 0.7rem">{{ getStepLabel(step) }}</small>
-            </div>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Mobile Bottom Padding to prevent content being hidden by bottom nav -->
-    <div class="d-md-none" style="height: 80px"></div>
   </div>
 </template>
 
@@ -728,12 +559,6 @@ import { useAuthStore } from "@/stores/auth";
 import surveyService from "@/services/surveyService";
 import masterDataService from "@/services/masterDataService";
 import SurveyFormProgress from "@/components/surveys/SurveyFormProgress.vue";
-import {
-  showSuccessToast,
-  showErrorToast,
-  showWarningToast,
-  showConfirmToast,
-} from "@/utils/toast";
 import moment from "moment";
 
 export default {
@@ -749,7 +574,6 @@ export default {
     const isSubmitting = ref(false);
     const gettingLocation = ref(false);
     const currentFormStep = ref(1);
-    const maxCompletedStep = ref(1); // Track the highest step user has reached
 
     // Master data
     const surveyTypes = ref([]);
@@ -814,10 +638,6 @@ export default {
       if (validateCurrentStep()) {
         if (currentFormStep.value < 4) {
           currentFormStep.value++;
-          maxCompletedStep.value = Math.max(
-            maxCompletedStep.value,
-            currentFormStep.value
-          );
         }
       }
     };
@@ -826,35 +646,6 @@ export default {
       if (currentFormStep.value > 1) {
         currentFormStep.value--;
       }
-    };
-
-    const goToStep = (step) => {
-      if (step <= maxCompletedStep.value + 1) {
-        if (step < currentFormStep.value || validateCurrentStep()) {
-          currentFormStep.value = step;
-          maxCompletedStep.value = Math.max(maxCompletedStep.value, step);
-        }
-      }
-    };
-
-    const getStepIcon = (step) => {
-      const icons = {
-        1: "bi bi-info-circle",
-        2: "bi bi-geo-alt",
-        3: "bi bi-building",
-        4: "bi bi-check-circle",
-      };
-      return icons[step] || "bi bi-circle";
-    };
-
-    const getStepLabel = (step) => {
-      const labels = {
-        1: "ข้อมูลพื้นฐาน",
-        2: "ที่ตั้ง",
-        3: "รายละเอียด",
-        4: "สรุป",
-      };
-      return labels[step] || `ขั้นตอน ${step}`;
     };
 
     const validateCurrentStep = () => {
@@ -911,58 +702,25 @@ export default {
 
     const getCurrentLocation = () => {
       if (!navigator.geolocation) {
-        showConfirmToast(
-          "เบราว์เซอร์ของคุณไม่รองรับการหาตำแหน่ง GPS<br>ต้องการกรอกพิกัดด้วยตนเองหรือไม่?",
-          () => {
-            // Focus on latitude input for manual entry
-            document.getElementById("latitude")?.focus();
-          }
-        );
+        alert("เบราว์เซอร์ของคุณไม่รองรับการหาตำแหน่ง GPS");
         return;
       }
 
       gettingLocation.value = true;
-
-      const options = {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000,
-      };
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
           form.latitude = position.coords.latitude.toFixed(6);
           form.longitude = position.coords.longitude.toFixed(6);
           gettingLocation.value = false;
-
-          // Show success notification
-          showSuccessToast("ได้รับพิกัด GPS แล้ว");
         },
         (error) => {
           console.error("Error getting location:", error);
-          gettingLocation.value = false;
-
-          let errorMessage = "ไม่สามารถหาตำแหน่งได้";
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = "กรุณาอนุญาตให้เข้าถึงตำแหน่งในเบราว์เซอร์";
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = "ไม่สามารถหาตำแหน่งได้ กรุณาตรวจสอบสัญญาณ GPS";
-              break;
-            case error.TIMEOUT:
-              errorMessage = "หาพิกัดเกินเวลา กรุณาลองใหม่อีกครั้ง";
-              break;
-          }
-
-          showConfirmToast(
-            `${errorMessage}<br>ต้องการกรอกพิกัดด้วยตนเองหรือไม่?`,
-            () => {
-              document.getElementById("latitude")?.focus();
-            }
+          alert(
+            "ไม่สามารถหาตำแหน่งได้ กรุณาตรวจสอบการตั้งค่าตำแหน่งในเบราว์เซอร์"
           );
-        },
-        options
+          gettingLocation.value = false;
+        }
       );
     };
 
@@ -971,7 +729,7 @@ export default {
 
       selectedFiles.forEach((file) => {
         if (file.size > 5 * 1024 * 1024) {
-          showWarningToast(`ไฟล์ ${file.name} มีขนาดใหญ่เกิน 5MB`);
+          alert(`ไฟล์ ${file.name} มีขนาดใหญ่เกิน 5MB`);
           return;
         }
         files.value.push(file);
@@ -988,18 +746,6 @@ export default {
       const sizes = ["Bytes", "KB", "MB", "GB"];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-    };
-
-    const getFileIcon = (fileType) => {
-      if (fileType.startsWith("image/")) {
-        return "bi bi-file-earmark-image";
-      } else if (fileType === "application/pdf") {
-        return "bi bi-file-earmark-pdf";
-      } else if (fileType.includes("word") || fileType.includes("document")) {
-        return "bi bi-file-earmark-word";
-      } else {
-        return "bi bi-file-earmark";
-      }
     };
 
     const onProvinceChange = async () => {
@@ -1070,14 +816,14 @@ export default {
         const response = await surveyService.createSurvey(formData);
 
         if (response.data.success) {
-          showSuccessToast("สร้างแบบสำรวจเรียบร้อยแล้ว");
+          alert("สร้างแบบสำรวจเรียบร้อยแล้ว");
           router.push("/surveys");
         } else {
           throw new Error(response.data.message || "เกิดข้อผิดพลาด");
         }
       } catch (error) {
         console.error("Error creating survey:", error);
-        showErrorToast("เกิดข้อผิดพลาดในการสร้างแบบสำรวจ");
+        alert("เกิดข้อผิดพลาดในการสร้างแบบสำรวจ");
       } finally {
         isSubmitting.value = false;
       }
@@ -1110,7 +856,7 @@ export default {
         banks.value = banksRes.data;
       } catch (error) {
         console.error("Error loading master data:", error);
-        showErrorToast("เกิดข้อผิดพลาดในการโหลดข้อมูล");
+        alert("เกิดข้อผิดพลาดในการโหลดข้อมูล");
       } finally {
         loading.value = false;
       }
@@ -1125,7 +871,6 @@ export default {
       isSubmitting,
       gettingLocation,
       currentFormStep,
-      maxCompletedStep,
       surveyTypes,
       provinces,
       districts,
@@ -1144,15 +889,11 @@ export default {
       selectedSurveyTypeName,
       nextStep,
       prevStep,
-      goToStep,
-      getStepIcon,
-      getStepLabel,
       validateCurrentStep,
       getCurrentLocation,
       handleFileUpload,
       removeFile,
       formatFileSize,
-      getFileIcon,
       onProvinceChange,
       onDistrictChange,
       submitForm,
@@ -1243,7 +984,6 @@ export default {
 @media (max-width: 768px) {
   .survey-create {
     padding: 0.5rem;
-    margin-bottom: 80px; /* Space for bottom navigation */
   }
 
   .survey-header {
@@ -1253,12 +993,10 @@ export default {
 
   .card {
     border-radius: 8px;
-    margin-bottom: 1rem;
   }
 
   .card-header {
     border-radius: 8px 8px 0 0 !important;
-    padding: 1rem;
   }
 
   .form-control-lg,
@@ -1279,29 +1017,6 @@ export default {
 
   .row .col-12 {
     margin-bottom: 1rem;
-  }
-
-  /* Bottom Navigation Styles */
-  .fixed-bottom {
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-  }
-
-  .fixed-bottom .btn {
-    transition: all 0.2s ease;
-  }
-
-  .fixed-bottom .btn:active {
-    transform: scale(0.95);
-  }
-
-  /* File upload buttons */
-  .btn.py-3 {
-    min-height: 80px;
-  }
-
-  /* Toast notification positioning */
-  .toast {
-    z-index: 9999 !important;
   }
 }
 

@@ -485,6 +485,7 @@
 import { ref, reactive, computed } from "vue";
 import { useRouter } from "vue-router";
 import userService from "@/services/userService";
+import { showSuccessToast, showErrorToast } from "@/utils/toast";
 
 const router = useRouter();
 
@@ -618,7 +619,7 @@ const handleSubmit = async () => {
     await userService.createUser(userData);
 
     // Show success message
-    alert("สร้างผู้ใช้สำเร็จ");
+    showSuccessToast("สร้างผู้ใช้สำเร็จ");
 
     // Redirect to user list
     router.push("/users");
@@ -626,9 +627,9 @@ const handleSubmit = async () => {
     console.error("Error creating user:", error);
 
     if (error.response?.data?.message) {
-      alert(`เกิดข้อผิดพลาด: ${error.response.data.message}`);
+      showErrorToast(`เกิดข้อผิดพลาด: ${error.response.data.message}`);
     } else {
-      alert("เกิดข้อผิดพลาดในการสร้างผู้ใช้");
+      showErrorToast("เกิดข้อผิดพลาดในการสร้างผู้ใช้");
     }
   } finally {
     loading.value = false;

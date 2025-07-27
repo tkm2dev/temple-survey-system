@@ -10,9 +10,10 @@ COLLATE utf8mb4_unicode_ci;
 USE temple_survey_db_v2;
 
 -- =================================================================
--- ตารางข้อมูลหลัก (Master Data & System)
+-- ตารางข้อมูลหลัก (Master Data & System Tables)
 -- =================================================================
 
+-- ตารางผู้ใช้งานระบบ (System Users)
 CREATE TABLE users (
     user_id INT PRIMARY KEY AUTO_INCREMENT COMMENT 'รหัสผู้ใช้งาน',
     username VARCHAR(50) NOT NULL UNIQUE,
@@ -32,8 +33,9 @@ CREATE TABLE users (
     last_login TIMESTAMP NULL COMMENT 'วันเวลาที่เข้าสู่ระบบล่าสุด',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) COMMENT 'ตารางผู้ใช้งานระบบ';
+) COMMENT 'ตารางผู้ใช้งานระบบ - เก็บข้อมูลผู้ใช้งานทั้งหมด (Admin, Reviewer, Surveyor)';
 
+-- ตารางบันทึกประวัติการใช้งาน (Activity Logs / Audit Trail)
 CREATE TABLE activity_logs (
     log_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
@@ -42,29 +44,32 @@ CREATE TABLE activity_logs (
     target_id INT,
     details TEXT COMMENT 'รายละเอียดการเปลี่ยนแปลง (JSON: old_data, new_data)',
     ip_address VARCHAR(45),
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-) COMMENT 'ตารางบันทึกประวัติการใช้งานและแก้ไขข้อมูลทั้งหมด (Audit Trail)';
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) COMMENT 'ตารางบันทึกประวัติการใช้งาน - เก็บ log การกระทำทั้งหมดของผู้ใช้งาน';
 
+-- ตารางประเภทการสำรวจ (Survey Target Types)
 CREATE TABLE survey_target_types (
     type_id INT PRIMARY KEY AUTO_INCREMENT,
     type_name VARCHAR(100) NOT NULL UNIQUE COMMENT 'ชื่อประเภทการสำรวจ (เช่น วัด, โรงเรียน)'
-) COMMENT 'ตารางประเภทเป้าหมายการสำรวจ (Master Data)';
+) COMMENT 'ตารางประเภทการสำรวจ - กำหนดชนิดของเป้าหมายที่จะสำรวจ (วัด, โรงเรียน, โรงพยาบาล)';
 
+-- ตารางประเภทวัด (Temple Types Master Data)
 CREATE TABLE master_temple_types (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL UNIQUE
-) COMMENT 'ตารางข้อมูลหลัก: ประเภทวัด';
+) COMMENT 'ตารางประเภทวัด - ราชวรวิหาร, วรวิหาร, วัดราษฎร์ ฯลฯ';
 
+-- ตารางสังกัดทางศาสนา (Religious Denominations)
 CREATE TABLE master_denominations (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL UNIQUE
-) COMMENT 'ตารางข้อมูลหลัก: สังกัด';
+) COMMENT 'ตารางสังกัดทางศาสนา - มหานิกาย, ธรรมยุตนิกาย, อื่นๆ';
 
 -- =================================================================
 -- ตารางข้อมูลการสำรวจ (Core Survey Data)
 -- =================================================================
 
+-- ตารางเป้าหมายการสำรวจหลัก (Main Survey Targets)
 CREATE TABLE survey_targets (
     target_id INT PRIMARY KEY AUTO_INCREMENT,
     type_id INT NOT NULL COMMENT 'FK to survey_target_types',
@@ -80,44 +85,40 @@ CREATE TABLE survey_targets (
     created_by INT NOT NULL COMMENT 'FK to users.user_id',
     reviewed_by INT COMMENT 'FK to users.user_id',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (type_id) REFERENCES survey_target_types(type_id),
-    FOREIGN KEY (created_by) REFERENCES users(user_id),
-    FOREIGN KEY (reviewed_by) REFERENCES users(user_id)
-) COMMENT 'ตารางข้อมูลเป้าหมายการสำรวจ (หัวใจของระบบ)';
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) COMMENT 'ตารางเป้าหมายการสำรวจหลัก - เก็บข้อมูลพื้นฐานของทุกประเภทการสำรวจ (วัด, โรงเรียน, โรงพยาบาล)';
 
+-- ตารางรายละเอียดเฉพาะวัด (Temple Specific Details)
 CREATE TABLE temple_details (
     temple_detail_id INT PRIMARY KEY AUTO_INCREMENT,
     target_id INT NOT NULL UNIQUE COMMENT 'FK to survey_targets',
     temple_type_id INT COMMENT 'FK to master_temple_types',
     denomination_id INT COMMENT 'FK to master_denominations',
     monk_count INT DEFAULT 0,
-    history_summary TEXT,
-    FOREIGN KEY (target_id) REFERENCES survey_targets(target_id) ON DELETE CASCADE,
-    FOREIGN KEY (temple_type_id) REFERENCES master_temple_types(id),
-    FOREIGN KEY (denomination_id) REFERENCES master_denominations(id)
-) COMMENT 'ตารางข้อมูลเฉพาะของวัด';
+    history_summary TEXT
+) COMMENT 'ตารางรายละเอียดเฉพาะวัด - เก็บข้อมูลเฉพาะที่เกี่ยวกับวัด (ประเภทวัด, สังกัด, จำนวนพระ)';
 
+-- ตารางบุคลากรที่เกี่ยวข้อง (Related Personnel)
 CREATE TABLE personnel (
     personnel_id INT PRIMARY KEY AUTO_INCREMENT,
     target_id INT NOT NULL,
     role VARCHAR(100) NOT NULL,
     first_name VARCHAR(100),
     last_name VARCHAR(100),
-    phone VARCHAR(20),
-    FOREIGN KEY (target_id) REFERENCES survey_targets(target_id) ON DELETE CASCADE
-) COMMENT 'ตารางบุคลากรที่เกี่ยวข้องกับเป้าหมาย';
+    phone VARCHAR(20)
+) COMMENT 'ตารางบุคลากรที่เกี่ยวข้อง - เก็บข้อมูลคนสำคัญ (เจ้าอาวาส, ผู้อำนวยการ, ประธานกรรมการ)';
 
+-- ตารางบัญชีธนาคาร (Bank Accounts)
 CREATE TABLE bank_accounts (
     account_id INT PRIMARY KEY AUTO_INCREMENT,
     target_id INT NOT NULL,
     bank_name VARCHAR(100) NOT NULL,
     account_number VARCHAR(50) NOT NULL,
     account_name VARCHAR(255) NOT NULL,
-    signatories TEXT COMMENT 'รายนามผู้มีอำนาจเบิกจ่าย',
-    FOREIGN KEY (target_id) REFERENCES survey_targets(target_id) ON DELETE CASCADE
-) COMMENT 'ตารางบัญชีธนาคาร';
+    signatories TEXT COMMENT 'รายนามผู้มีอำนาจเบิกจ่าย'
+) COMMENT 'ตารางบัญชีธนาคาร - เก็บข้อมูลบัญชีธนาคารของหน่วยงานที่สำรวจ';
 
+-- ตารางไฟล์แนบ (File Attachments)
 CREATE TABLE attachments (
     attachment_id INT PRIMARY KEY AUTO_INCREMENT,
     target_id INT NOT NULL,
@@ -126,15 +127,14 @@ CREATE TABLE attachments (
     file_path VARCHAR(255) NOT NULL,
     file_type VARCHAR(100),
     description TEXT,
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (target_id) REFERENCES survey_targets(target_id) ON DELETE CASCADE,
-    FOREIGN KEY (uploader_user_id) REFERENCES users(user_id)
-) COMMENT 'ตารางเก็บไฟล์แนบของการสำรวจ';
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) COMMENT 'ตารางไฟล์แนบ - เก็บไฟล์เอกสาร รูปภาพ ที่เกี่ยวข้องกับการสำรวจ';
 
 -- =================================================================
 -- ตารางระบบแจ้งเตือน (Notification System)
 -- =================================================================
 
+-- ตารางการแจ้งเตือน (System Notifications)
 CREATE TABLE notifications (
     notification_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
@@ -143,19 +143,11 @@ CREATE TABLE notifications (
     type ENUM('info', 'success', 'warning', 'error') DEFAULT 'info',
     is_read BOOLEAN DEFAULT FALSE,
     related_target_id INT COMMENT 'FK to survey_targets',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id),
-    FOREIGN KEY (related_target_id) REFERENCES survey_targets(target_id)
-) COMMENT 'ตารางแจ้งเตือนในระบบ';
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) COMMENT 'ตารางการแจ้งเตือน - เก็บข้อความแจ้งเตือนสำหรับผู้ใช้งานแต่ละคน';
 
 -- =================================================================
--- สร้าง Index เพื่อเพิ่มประสิทธิภาพ
+-- Indexes จะถูกสร้างภายหลังเมื่อโครงสร้างตารางสมบูรณ์
 -- =================================================================
 
-CREATE INDEX idx_survey_targets_status ON survey_targets(status);
-CREATE INDEX idx_survey_targets_created_by ON survey_targets(created_by);
-CREATE INDEX idx_activity_logs_user_id ON activity_logs(user_id);
-CREATE INDEX idx_activity_logs_timestamp ON activity_logs(timestamp);
-CREATE INDEX idx_notifications_user_id ON notifications(user_id);
-CREATE INDEX idx_notifications_is_read ON notifications(is_read);
-CREATE INDEX idx_users_approval_status ON users(approval_status);
+-- Indexes will be added later when table structure is finalized
