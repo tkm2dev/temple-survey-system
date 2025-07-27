@@ -1,59 +1,60 @@
 <template>
   <div class="survey-create">
-    <!-- Header Section -->
-    <div class="survey-header mb-4">
-      <div class="d-flex justify-content-between align-items-start mb-3">
-        <nav aria-label="breadcrumb">
-          <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-              <router-link to="/" class="text-decoration-none"
-                >หน้าแรก</router-link
-              >
-            </li>
-            <li class="breadcrumb-item">
-              <router-link to="/surveys" class="text-decoration-none"
-                >ข้อมูลการสำรวจ</router-link
-              >
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">
-              สร้างการสำรวจใหม่
-            </li>
-          </ol>
-        </nav>
-
-        <button class="btn btn-outline-secondary btn-sm" @click="goBack">
-          <i class="bi bi-arrow-left me-1"></i>
-          กลับ
-        </button>
+    <!-- Mobile Header -->
+    <div class="d-md-none bg-white border-bottom sticky-top">
+      <div class="d-flex align-items-center p-3">
+        <router-link to="/surveys" class="btn btn-link p-0 me-3">
+          <i class="bi bi-arrow-left fs-5"></i>
+        </router-link>
+        <div class="flex-grow-1">
+          <h5 class="mb-0">สร้างแบบสำรวจใหม่</h5>
+          <small class="text-muted">ขั้นตอนที่ {{ currentFormStep }} จาก 4</small>
+        </div>
+        <div class="text-end">
+          <div class="progress" style="width: 60px; height: 4px;">
+            <div 
+              class="progress-bar bg-success" 
+              :style="{ width: `${(currentFormStep / 4) * 100}%` }"
+            ></div>
+          </div>
+        </div>
       </div>
-
-      <h2>
-        <i class="bi bi-plus-circle me-2 text-primary"></i>
-        สร้างการสำรวจใหม่
-      </h2>
-      <p class="text-muted mb-0">กรอกข้อมูลการสำรวจให้ครบถ้วนตามขั้นตอน</p>
     </div>
 
-    <!-- Progress Indicator -->
-    <SurveyFormProgress
-      :current-step="currentFormStep"
-      :form-data="form"
-      :is-temple-type="isTempleType"
-    />
+    <!-- Desktop Header -->
+    <div class="d-none d-md-block survey-header mb-4">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="mb-1">
+            <i class="bi bi-clipboard-plus me-2 text-primary"></i>
+            สร้างแบบสำรวจใหม่
+          </h2>
+          <p class="text-muted mb-0">กรอกข้อมูลแบบสำรวจเพื่อเริ่มการเก็บข้อมูล</p>
+        </div>
+        <router-link to="/surveys" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-2"></i>
+          กลับ
+        </router-link>
+      </div>
+    </div>
 
-    <!-- Form Section -->
-    <form @submit.prevent="handleSubmit" class="survey-form">
-      <!-- Basic Information Card -->
-      <div class="card mb-4">
+    <!-- Progress Indicator (Mobile First) -->
+    <div class="mb-4">
+      <SurveyFormProgress :current-step="currentFormStep" :total-steps="4" />
+    </div>
+
+    <form @submit.prevent="submitForm" class="survey-form">
+      <!-- Step 1: Basic Information -->
+      <div v-show="currentFormStep === 1" class="card mb-4">
         <div class="card-header">
           <h5 class="mb-0">
-            <i class="bi bi-info-circle me-2"></i>
-            ข้อมูลพื้นฐาน
+            <i class="bi bi-info-circle me-2 text-primary"></i>
+            ข้อมูลพื้นฐาน (1/4)
           </h5>
         </div>
         <div class="card-body">
           <div class="row">
-            <div class="col-md-6">
+            <div class="col-12 col-md-6">
               <div class="mb-3">
                 <label for="targetName" class="form-label">
                   ชื่อเป้าหมายการสำรวจ <span class="text-danger">*</span>
@@ -61,10 +62,10 @@
                 <input
                   v-model="form.target_name"
                   type="text"
-                  class="form-control"
+                  class="form-control form-control-lg"
                   :class="{ 'is-invalid': errors.target_name }"
                   id="targetName"
-                  placeholder="ระบุชื่อเป้าหมายการสำรวจ"
+                  placeholder="กรอกชื่อเป้าหมายการสำรวจ"
                   required
                 />
                 <div v-if="errors.target_name" class="invalid-feedback">
@@ -73,26 +74,25 @@
               </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-12 col-md-6">
               <div class="mb-3">
                 <label for="surveyType" class="form-label">
                   ประเภทการสำรวจ <span class="text-danger">*</span>
                 </label>
                 <select
                   v-model="form.type_id"
-                  class="form-select"
+                  class="form-select form-select-lg"
                   :class="{ 'is-invalid': errors.type_id }"
                   id="surveyType"
                   required
-                  @change="onSurveyTypeChange"
                 >
                   <option value="">เลือกประเภทการสำรวจ</option>
                   <option
                     v-for="type in surveyTypes"
-                    :key="type.type_id"
-                    :value="type.type_id"
+                    :key="type.id"
+                    :value="type.id"
                   >
-                    {{ type.type_name }}
+                    {{ type.name }}
                   </option>
                 </select>
                 <div v-if="errors.type_id" class="invalid-feedback">
@@ -113,8 +113,8 @@
                   class="form-control"
                   :class="{ 'is-invalid': errors.address }"
                   id="address"
-                  rows="2"
-                  placeholder="ระบุที่อยู่โดยละเอียด"
+                  rows="3"
+                  placeholder="กรอกที่อยู่อย่างละเอียด"
                   required
                 ></textarea>
                 <div v-if="errors.address" class="invalid-feedback">
@@ -124,25 +124,42 @@
             </div>
           </div>
 
+          <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-primary btn-lg" @click="nextStep">
+              ถัดไป <i class="bi bi-arrow-right ms-2"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Location Information -->
+      <div v-show="currentFormStep === 2" class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-geo-alt me-2 text-primary"></i>
+            ข้อมูลที่ตั้ง (2/4)
+          </h5>
+        </div>
+        <div class="card-body">
           <div class="row">
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
               <div class="mb-3">
                 <label for="province" class="form-label">
                   จังหวัด <span class="text-danger">*</span>
                 </label>
                 <select
                   v-model="form.province"
-                  class="form-select"
+                  @change="onProvinceChange"
+                  class="form-select form-select-lg"
                   :class="{ 'is-invalid': errors.province }"
                   id="province"
                   required
-                  @change="onProvinceChange"
                 >
                   <option value="">เลือกจังหวัด</option>
                   <option
                     v-for="province in provinces"
                     :key="province.id"
-                    :value="province.name"
+                    :value="province.id"
                   >
                     {{ province.name }}
                   </option>
@@ -153,25 +170,25 @@
               </div>
             </div>
 
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
               <div class="mb-3">
                 <label for="district" class="form-label">
-                  อำเภอ <span class="text-danger">*</span>
+                  อำเภอ/เขต <span class="text-danger">*</span>
                 </label>
                 <select
                   v-model="form.district"
-                  class="form-select"
+                  @change="onDistrictChange"
+                  class="form-select form-select-lg"
                   :class="{ 'is-invalid': errors.district }"
                   id="district"
-                  required
                   :disabled="!form.province"
-                  @change="onDistrictChange"
+                  required
                 >
-                  <option value="">เลือกอำเภอ</option>
+                  <option value="">เลือกอำเภอ/เขต</option>
                   <option
                     v-for="district in districts"
                     :key="district.id"
-                    :value="district.name"
+                    :value="district.id"
                   >
                     {{ district.name }}
                   </option>
@@ -182,24 +199,24 @@
               </div>
             </div>
 
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
               <div class="mb-3">
                 <label for="subdistrict" class="form-label">
-                  ตำบล <span class="text-danger">*</span>
+                  ตำบล/แขวง <span class="text-danger">*</span>
                 </label>
                 <select
                   v-model="form.subdistrict"
-                  class="form-select"
+                  class="form-select form-select-lg"
                   :class="{ 'is-invalid': errors.subdistrict }"
                   id="subdistrict"
-                  required
                   :disabled="!form.district"
+                  required
                 >
-                  <option value="">เลือกตำบล</option>
+                  <option value="">เลือกตำบล/แขวง</option>
                   <option
                     v-for="subdistrict in subdistricts"
                     :key="subdistrict.id"
-                    :value="subdistrict.name"
+                    :value="subdistrict.id"
                   >
                     {{ subdistrict.name }}
                   </option>
@@ -211,601 +228,437 @@
             </div>
           </div>
 
+          <!-- GPS Location -->
           <div class="row">
-            <div class="col-md-4">
-              <div class="mb-3">
-                <label for="postalCode" class="form-label">รหัสไปรษณีย์</label>
-                <input
-                  v-model="form.postal_code"
-                  type="text"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.postal_code }"
-                  id="postalCode"
-                  placeholder="XXXXX"
-                  maxlength="5"
-                />
-                <div v-if="errors.postal_code" class="invalid-feedback">
-                  {{ errors.postal_code }}
-                </div>
-              </div>
-            </div>
+            <div class="col-12">
+              <div class="card border-0" style="background-color: #f8f9fa;">
+                <div class="card-body">
+                  <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h6 class="mb-0">
+                      <i class="bi bi-geo-alt-fill me-2 text-primary"></i>
+                      พิกัด GPS
+                    </h6>
+                    <button
+                      type="button"
+                      class="btn btn-primary btn-sm"
+                      @click="getCurrentLocation"
+                      :disabled="gettingLocation"
+                    >
+                      <span
+                        v-if="gettingLocation"
+                        class="spinner-border spinner-border-sm me-2"
+                      ></span>
+                      <i v-else class="bi bi-crosshair me-2"></i>
+                      {{ gettingLocation ? 'กำลังหาตำแหน่ง...' : 'ใช้ตำแหน่งปัจจุบัน' }}
+                    </button>
+                  </div>
 
-            <div class="col-md-4">
-              <div class="mb-3">
-                <label for="latitude" class="form-label"
-                  >พิกัด GPS - ละติจูด</label
-                >
-                <div class="input-group">
-                  <input
-                    v-model.number="form.gps_latitude"
-                    type="number"
-                    class="form-control"
-                    :class="{ 'is-invalid': errors.gps_latitude }"
-                    id="latitude"
-                    step="any"
-                    placeholder="13.7563"
-                  />
-                  <button
-                    type="button"
-                    class="btn btn-outline-secondary"
-                    @click="getCurrentLocation"
-                    :disabled="gettingLocation"
-                    title="ใช้ตำแหน่งปัจจุบัน"
-                  >
-                    <i
-                      v-if="gettingLocation"
-                      class="bi bi-arrow-clockwise spin"
-                    ></i>
-                    <i v-else class="bi bi-geo-alt"></i>
-                  </button>
-                </div>
-                <div v-if="errors.gps_latitude" class="invalid-feedback">
-                  {{ errors.gps_latitude }}
-                </div>
-              </div>
-            </div>
+                  <!-- Location Status -->
+                  <div v-if="form.latitude && form.longitude" class="alert alert-success py-2 mb-3">
+                    <div class="d-flex align-items-center">
+                      <i class="bi bi-check-circle-fill me-2"></i>
+                      <small>พิกัดถูกบันทึกแล้ว</small>
+                      <a 
+                        :href="`https://www.google.com/maps?q=${form.latitude},${form.longitude}`" 
+                        target="_blank" 
+                        class="btn btn-outline-success btn-sm ms-auto"
+                      >
+                        <i class="bi bi-map me-1"></i>
+                        ดูแผนที่
+                      </a>
+                    </div>
+                  </div>
+                  
+                  <div class="row">
+                    <div class="col-6">
+                      <div class="form-floating">
+                        <input
+                          v-model="form.latitude"
+                          type="number"
+                          step="any"
+                          class="form-control"
+                          id="latitude"
+                          placeholder="0.000000"
+                        />
+                        <label for="latitude">ละติจูด</label>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="form-floating">
+                        <input
+                          v-model="form.longitude"
+                          type="number"
+                          step="any"
+                          class="form-control"
+                          id="longitude"
+                          placeholder="0.000000"
+                        />
+                        <label for="longitude">ลองจิจูด</label>
+                      </div>
+                    </div>
+                  </div>
 
-            <div class="col-md-4">
-              <div class="mb-3">
-                <label for="longitude" class="form-label"
-                  >พิกัด GPS - ลองจิจูด</label
-                >
-                <input
-                  v-model.number="form.gps_longitude"
-                  type="number"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.gps_longitude }"
-                  id="longitude"
-                  step="any"
-                  placeholder="100.5018"
-                />
-                <div v-if="errors.gps_longitude" class="invalid-feedback">
-                  {{ errors.gps_longitude }}
+                  <!-- Location Tips for Mobile -->
+                  <div class="d-md-none mt-3">
+                    <div class="alert alert-info py-2">
+                      <small>
+                        <i class="bi bi-lightbulb me-1"></i>
+                        <strong>คำแนะนำ:</strong> เปิดการให้สิทธิ์ตำแหน่งในเบราว์เซอร์เพื่อใช้งาน GPS อัตโนมัติ
+                      </small>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="mb-3">
-            <label for="notes" class="form-label">หมายเหตุ</label>
-            <textarea
-              v-model="form.notes"
-              class="form-control"
-              :class="{ 'is-invalid': errors.notes }"
-              id="notes"
-              rows="3"
-              placeholder="ระบุหมายเหตุเพิ่มเติม (ถ้ามี)"
-            ></textarea>
-            <div v-if="errors.notes" class="invalid-feedback">
-              {{ errors.notes }}
-            </div>
+          <div class="d-flex justify-content-between">
+            <button type="button" class="btn btn-outline-secondary btn-lg" @click="prevStep">
+              <i class="bi bi-arrow-left me-2"></i> ย้อนกลับ
+            </button>
+            <button type="button" class="btn btn-primary btn-lg" @click="nextStep">
+              ถัดไป <i class="bi bi-arrow-right ms-2"></i>
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- Temple Details Card (show only for Temple survey type) -->
-      <div v-if="isTempleType" class="card mb-4">
+      <!-- Step 3: Temple Details (only for temple surveys) -->
+      <div v-show="currentFormStep === 3" class="card mb-4">
         <div class="card-header">
           <h5 class="mb-0">
             <i class="bi bi-building me-2 text-primary"></i>
-            ข้อมูลวัด
+            {{ isTempleType ? 'ข้อมูลวัด (3/4)' : 'ข้อมูลเพิ่มเติม (3/4)' }}
           </h5>
         </div>
         <div class="card-body">
-          <div class="row">
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label for="templeType" class="form-label">
-                  ประเภทวัด <span class="text-danger">*</span>
-                </label>
-                <select
-                  v-model="templeDetails.temple_type_id"
-                  class="form-select"
-                  :class="{ 'is-invalid': errors.temple_type_id }"
-                  id="templeType"
-                  required
-                >
-                  <option value="">เลือกประเภทวัด</option>
-                  <option
-                    v-for="type in templeTypes"
-                    :key="type.id"
-                    :value="type.id"
+          <div v-if="isTempleType">
+            <div class="row">
+              <div class="col-12 col-md-6">
+                <div class="mb-3">
+                  <label for="templeType" class="form-label">
+                    ประเภทวัด <span class="text-danger">*</span>
+                  </label>
+                  <select
+                    v-model="templeDetails.temple_type_id"
+                    class="form-select form-select-lg"
+                    :class="{ 'is-invalid': errors.temple_type_id }"
+                    id="templeType"
+                    required
                   >
-                    {{ type.name }}
-                  </option>
-                </select>
-                <div v-if="errors.temple_type_id" class="invalid-feedback">
-                  {{ errors.temple_type_id }}
+                    <option value="">เลือกประเภทวัด</option>
+                    <option
+                      v-for="type in templeTypes"
+                      :key="type.id"
+                      :value="type.id"
+                    >
+                      {{ type.name }}
+                    </option>
+                  </select>
+                  <div v-if="errors.temple_type_id" class="invalid-feedback">
+                    {{ errors.temple_type_id }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <div class="mb-3">
+                  <label for="denomination" class="form-label">
+                    สังกัด/นิกาย <span class="text-danger">*</span>
+                  </label>
+                  <select
+                    v-model="templeDetails.denomination_id"
+                    class="form-select form-select-lg"
+                    :class="{ 'is-invalid': errors.denomination_id }"
+                    id="denomination"
+                    required
+                  >
+                    <option value="">เลือกสังกัด/นิกาย</option>
+                    <option
+                      v-for="denomination in denominations"
+                      :key="denomination.id"
+                      :value="denomination.id"
+                    >
+                      {{ denomination.name }}
+                    </option>
+                  </select>
+                  <div v-if="errors.denomination_id" class="invalid-feedback">
+                    {{ errors.denomination_id }}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label for="denomination" class="form-label">
-                  สังกัด/นิกาย <span class="text-danger">*</span>
-                </label>
-                <select
-                  v-model="templeDetails.denomination_id"
-                  class="form-select"
-                  :class="{ 'is-invalid': errors.denomination_id }"
-                  id="denomination"
-                  required
-                >
-                  <option value="">เลือกสังกัด/นิกาย</option>
-                  <option
-                    v-for="denomination in denominations"
-                    :key="denomination.id"
-                    :value="denomination.id"
-                  >
-                    {{ denomination.name }}
-                  </option>
-                </select>
-                <div v-if="errors.denomination_id" class="invalid-feedback">
-                  {{ errors.denomination_id }}
+            <div class="row">
+              <div class="col-12 col-md-6">
+                <div class="mb-3">
+                  <label for="monkCount" class="form-label">
+                    จำนวนพระ <span class="text-danger">*</span>
+                  </label>
+                  <input
+                    v-model.number="templeDetails.monk_count"
+                    type="number"
+                    class="form-control form-control-lg"
+                    :class="{ 'is-invalid': errors.monk_count }"
+                    id="monkCount"
+                    min="0"
+                    placeholder="0"
+                    required
+                  />
+                  <div v-if="errors.monk_count" class="invalid-feedback">
+                    {{ errors.monk_count }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <div class="mb-3">
+                  <label for="historySummary" class="form-label">
+                    ประวัติสรุป
+                  </label>
+                  <textarea
+                    v-model="templeDetails.history_summary"
+                    class="form-control"
+                    id="historySummary"
+                    rows="3"
+                    placeholder="ข้อมูลประวัติโดยสรุป"
+                  ></textarea>
                 </div>
               </div>
             </div>
           </div>
-
-          <div class="row">
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label for="monkCount" class="form-label">
-                  จำนวนพระ <span class="text-danger">*</span>
-                </label>
-                <input
-                  v-model.number="templeDetails.monk_count"
-                  type="number"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.monk_count }"
-                  id="monkCount"
-                  min="0"
-                  placeholder="0"
-                  required
-                />
-                <div v-if="errors.monk_count" class="invalid-feedback">
-                  {{ errors.monk_count }}
-                </div>
-              </div>
+          <div v-else>
+            <div class="text-center py-5 text-muted">
+              <i class="bi bi-info-circle fs-1 d-block mb-3"></i>
+              <p>ข้อมูลเพิ่มเติมจะปรากฏขึ้นตามประเภทการสำรวจที่เลือก</p>
             </div>
+          </div>
 
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label for="historySummary" class="form-label">
-                  ประวัติสรุป
-                </label>
-                <textarea
-                  v-model="templeDetails.history_summary"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.history_summary }"
-                  id="historySummary"
-                  rows="3"
-                  placeholder="ระบุประวัติสรุปของวัด (ถ้ามี)"
-                ></textarea>
-                <div v-if="errors.history_summary" class="invalid-feedback">
-                  {{ errors.history_summary }}
-                </div>
-              </div>
-            </div>
+          <div class="d-flex justify-content-between">
+            <button type="button" class="btn btn-outline-secondary btn-lg" @click="prevStep">
+              <i class="bi bi-arrow-left me-2"></i> ย้อนกลับ
+            </button>
+            <button type="button" class="btn btn-primary btn-lg" @click="nextStep">
+              ถัดไป <i class="bi bi-arrow-right ms-2"></i>
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- Personnel Card -->
-      <div class="card mb-4">
-        <div
-          class="card-header d-flex justify-content-between align-items-center"
-        >
+      <!-- Step 4: Final Review & Files -->
+      <div v-show="currentFormStep === 4" class="card mb-4">
+        <div class="card-header">
           <h5 class="mb-0">
-            <i class="bi bi-people me-2 text-info"></i>
-            บุคลากรที่เกี่ยวข้อง
+            <i class="bi bi-check-circle me-2 text-primary"></i>
+            สรุปและไฟล์แนบ (4/4)
           </h5>
-          <button
-            type="button"
-            class="btn btn-sm btn-outline-info"
-            @click="addPersonnel"
-          >
-            <i class="bi bi-plus me-1"></i>
-            เพิ่มบุคลากร
-          </button>
         </div>
         <div class="card-body">
-          <div
-            v-if="personnel.length === 0"
-            class="text-center text-muted py-3"
-          >
-            <i class="bi bi-person-plus fs-1 d-block mb-2"></i>
-            <p>ยังไม่มีข้อมูลบุคลากร</p>
-            <small
-              >คลิกปุ่ม "เพิ่มบุคลากร"
-              เพื่อเพิ่มข้อมูลบุคลากรที่เกี่ยวข้อง</small
-            >
-          </div>
-
-          <div v-else>
-            <div
-              v-for="(person, index) in personnel"
-              :key="index"
-              class="personnel-item p-3 mb-3 border rounded"
-            >
-              <div
-                class="d-flex justify-content-between align-items-start mb-3"
-              >
-                <h6 class="mb-0">
-                  <i class="bi bi-person me-2"></i>
-                  บุคลากรคนที่ {{ index + 1 }}
-                </h6>
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-danger"
-                  @click="removePersonnel(index)"
-                >
-                  <i class="bi bi-trash"></i>
-                </button>
-              </div>
-
-              <div class="row">
-                <div class="col-md-3">
-                  <div class="mb-3">
-                    <label class="form-label">บทบาท/หน้าที่</label>
-                    <select
-                      v-model="person.role"
-                      class="form-select form-select-sm"
-                      :class="{
-                        'is-invalid': errors[`personnel_${index}_role`],
-                      }"
-                    >
-                      <option value="">เลือกบทบาท</option>
-                      <option value="เจ้าอาวาส">เจ้าอาวาس</option>
-                      <option value="รองเจ้าอาวาส">รองเจ้าอาวาส</option>
-                      <option value="เลขานุการ">เลขานุการ</option>
-                      <option value="เหรัญญิก">เหรัญญิก</option>
-                      <option value="กรรมการ">กรรมการ</option>
-                      <option value="อื่นๆ">อื่นๆ</option>
-                    </select>
-                    <div
-                      v-if="errors[`personnel_${index}_role`]"
-                      class="invalid-feedback"
-                    >
-                      {{ errors[`personnel_${index}_role`] }}
-                    </div>
-                  </div>
+          <!-- File Upload Section -->
+          <div class="mb-4">
+            <h6 class="mb-3">
+              <i class="bi bi-file-earmark-image me-2 text-primary"></i>
+              ไฟล์แนบ
+            </h6>
+            
+            <!-- Mobile-First Upload Options -->
+            <div class="d-md-none mb-3">
+              <div class="row g-2">
+                <div class="col-6">
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-primary w-100 py-3"
+                    @click="$refs.cameraInput.click()"
+                  >
+                    <i class="bi bi-camera-fill d-block fs-3 mb-2"></i>
+                    <small>ถ่าย<br>ภาพใหม่</small>
+                  </button>
+                  <input
+                    ref="cameraInput"
+                    @change="handleFileUpload"
+                    type="file"
+                    class="d-none"
+                    accept="image/*"
+                    capture="environment"
+                    multiple
+                  />
                 </div>
-
-                <div class="col-md-3">
-                  <div class="mb-3">
-                    <label class="form-label">ชื่อ</label>
-                    <input
-                      v-model="person.first_name"
-                      type="text"
-                      class="form-control form-control-sm"
-                      :class="{
-                        'is-invalid': errors[`personnel_${index}_first_name`],
-                      }"
-                      placeholder="ชื่อ"
-                    />
-                    <div
-                      v-if="errors[`personnel_${index}_first_name`]"
-                      class="invalid-feedback"
-                    >
-                      {{ errors[`personnel_${index}_first_name`] }}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-3">
-                  <div class="mb-3">
-                    <label class="form-label">นามสกุล</label>
-                    <input
-                      v-model="person.last_name"
-                      type="text"
-                      class="form-control form-control-sm"
-                      :class="{
-                        'is-invalid': errors[`personnel_${index}_last_name`],
-                      }"
-                      placeholder="นามสกุล"
-                    />
-                    <div
-                      v-if="errors[`personnel_${index}_last_name`]"
-                      class="invalid-feedback"
-                    >
-                      {{ errors[`personnel_${index}_last_name`] }}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-3">
-                  <div class="mb-3">
-                    <label class="form-label">เบอร์โทรศัพท์</label>
-                    <input
-                      v-model="person.phone"
-                      type="tel"
-                      class="form-control form-control-sm"
-                      :class="{
-                        'is-invalid': errors[`personnel_${index}_phone`],
-                      }"
-                      placeholder="0X-XXXX-XXXX"
-                    />
-                    <div
-                      v-if="errors[`personnel_${index}_phone`]"
-                      class="invalid-feedback"
-                    >
-                      {{ errors[`personnel_${index}_phone`] }}
-                    </div>
-                  </div>
+                <div class="col-6">
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-secondary w-100 py-3"
+                    @click="$refs.galleryInput.click()"
+                  >
+                    <i class="bi bi-images d-block fs-3 mb-2"></i>
+                    <small>เลือกจาก<br>คลังภาพ</small>
+                  </button>
+                  <input
+                    ref="galleryInput"
+                    @change="handleFileUpload"
+                    type="file"
+                    class="d-none"
+                    accept="image/*,.pdf,.doc,.docx"
+                    multiple
+                  />
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Bank Accounts Card -->
-      <div class="card mb-4">
-        <div
-          class="card-header d-flex justify-content-between align-items-center"
-        >
-          <h5 class="mb-0">
-            <i class="bi bi-bank me-2 text-success"></i>
-            บัญชีธนาคาร
-          </h5>
-          <button
-            type="button"
-            class="btn btn-sm btn-outline-success"
-            @click="addBankAccount"
-          >
-            <i class="bi bi-plus me-1"></i>
-            เพิ่มบัญชี
-          </button>
-        </div>
-        <div class="card-body">
-          <div
-            v-if="bankAccounts.length === 0"
-            class="text-center text-muted py-3"
-          >
-            <i class="bi bi-bank fs-1 d-block mb-2"></i>
-            <p>ยังไม่มีข้อมูลบัญชีธนาคาร</p>
-            <small>คลิกปุ่ม "เพิ่มบัญชี" เพื่อเพิ่มข้อมูลบัญชีธนาคาร</small>
-          </div>
-
-          <div v-else>
-            <div
-              v-for="(account, index) in bankAccounts"
-              :key="index"
-              class="bank-account-item p-3 mb-3 border rounded"
-            >
-              <div
-                class="d-flex justify-content-between align-items-start mb-3"
-              >
-                <h6 class="mb-0">
-                  <i class="bi bi-bank me-2"></i>
-                  บัญชีที่ {{ index + 1 }}
-                </h6>
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-danger"
-                  @click="removeBankAccount(index)"
-                >
-                  <i class="bi bi-trash"></i>
-                </button>
-              </div>
-
-              <div class="row">
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label"
-                      >ธนาคาร <span class="text-danger">*</span></label
-                    >
-                    <select
-                      v-model="account.bank_name"
-                      class="form-select form-select-sm"
-                      :class="{
-                        'is-invalid': errors[`bank_${index}_bank_name`],
-                      }"
-                    >
-                      <option value="">เลือกธนาคาร</option>
-                      <option value="ธนาคารกรุงเทพ">ธนาคารกรุงเทพ</option>
-                      <option value="ธนาคารกสิกรไทย">ธนาคารกสิกรไทย</option>
-                      <option value="ธนาคารกรุงไทย">ธนาคารกรุงไทย</option>
-                      <option value="ธนาคารทหารไทยธนชาต">
-                        ธนาคารทหารไทยธนชาต
-                      </option>
-                      <option value="ธนาคารไทยพาณิชย์">ธนาคารไทยพาณิชย์</option>
-                      <option value="ธนาคารกรุงศรีอยุธยา">
-                        ธนาคารกรุงศรีอยุธยา
-                      </option>
-                      <option value="ธนาคารออมสิน">ธนาคารออมสิน</option>
-                      <option value="ธนาคารอาคารสงเคราะห์">
-                        ธนาคารอาคารสงเคราะห์
-                      </option>
-                      <option value="ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร">
-                        ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร
-                      </option>
-                      <option value="อื่นๆ">อื่นๆ</option>
-                    </select>
-                    <div
-                      v-if="errors[`bank_${index}_bank_name`]"
-                      class="invalid-feedback"
-                    >
-                      {{ errors[`bank_${index}_bank_name`] }}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label"
-                      >เลขที่บัญชี <span class="text-danger">*</span></label
-                    >
-                    <input
-                      v-model="account.account_number"
-                      type="text"
-                      class="form-control form-control-sm"
-                      :class="{
-                        'is-invalid': errors[`bank_${index}_account_number`],
-                      }"
-                      placeholder="XXX-X-XXXXX-X"
-                    />
-                    <div
-                      v-if="errors[`bank_${index}_account_number`]"
-                      class="invalid-feedback"
-                    >
-                      {{ errors[`bank_${index}_account_number`] }}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label"
-                      >ชื่อบัญชี <span class="text-danger">*</span></label
-                    >
-                    <input
-                      v-model="account.account_name"
-                      type="text"
-                      class="form-control form-control-sm"
-                      :class="{
-                        'is-invalid': errors[`bank_${index}_account_name`],
-                      }"
-                      placeholder="ชื่อบัญชี"
-                    />
-                    <div
-                      v-if="errors[`bank_${index}_account_name`]"
-                      class="invalid-feedback"
-                    >
-                      {{ errors[`bank_${index}_account_name`] }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
+            <!-- Desktop Upload -->
+            <div class="d-none d-md-block">
               <div class="row">
                 <div class="col-12">
                   <div class="mb-3">
-                    <label class="form-label">ผู้มีอำนาจเบิกจ่าย</label>
-                    <textarea
-                      v-model="account.signatories"
-                      class="form-control form-control-sm"
-                      :class="{
-                        'is-invalid': errors[`bank_${index}_signatories`],
-                      }"
-                      rows="2"
-                      placeholder="ระบุรายนามผู้มีอำนาจเบิกจ่าย (คั่นด้วยจุลภาค)"
-                    ></textarea>
-                    <div
-                      v-if="errors[`bank_${index}_signatories`]"
-                      class="invalid-feedback"
-                    >
-                      {{ errors[`bank_${index}_signatories`] }}
+                    <label for="files" class="form-label">อัปโลดไฟล์</label>
+                    <input
+                      @change="handleFileUpload"
+                      type="file"
+                      class="form-control form-control-lg"
+                      id="files"
+                      multiple
+                      accept="image/*,.pdf,.doc,.docx"
+                    />
+                    <div class="form-text">
+                      รองรับไฟล์ประเภท: รูปภาพ, PDF, Word (ขนาดไม่เกิน 5MB ต่อไฟล์)
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- File Upload Card -->
-      <div class="card mb-4">
-        <div class="card-header">
-          <h5 class="mb-0">
-            <i class="bi bi-paperclip me-2"></i>
-            ไฟล์แนบ
-          </h5>
-        </div>
-        <div class="card-body">
-          <div class="mb-3">
-            <input
-              ref="fileInput"
-              type="file"
-              class="form-control"
-              multiple
-              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
-              @change="handleFileSelect"
-            />
-            <div class="form-text">
-              รองรับไฟล์: รูปภาพ, PDF, Word, Excel (ขนาดไม่เกิน 10MB ต่อไฟล์)
-            </div>
-          </div>
-
-          <!-- Selected Files Preview -->
-          <div v-if="selectedFiles.length > 0" class="selected-files">
-            <h6>ไฟล์ที่เลือก ({{ selectedFiles.length }})</h6>
-            <div class="row">
-              <div
-                v-for="(file, index) in selectedFiles"
-                :key="index"
-                class="col-12 col-sm-6 col-lg-4 mb-2"
-              >
-                <div
-                  class="file-preview p-2 border rounded d-flex align-items-center"
-                >
-                  <i
-                    :class="getFileIcon(file.type)"
-                    class="me-2 text-muted"
-                  ></i>
-                  <div class="flex-grow-1">
-                    <small class="d-block">{{ file.name }}</small>
-                    <small class="text-muted">{{
-                      formatFileSize(file.size)
-                    }}</small>
-                  </div>
-                  <button
-                    type="button"
-                    class="btn btn-link btn-sm text-danger p-0"
-                    @click="removeFile(index)"
+            <!-- File Preview -->
+            <div v-if="files.length > 0" class="row">
+              <div class="col-12">
+                <h6>ไฟล์ที่เลือก ({{ files.length }} ไฟล์):</h6>
+                
+                <!-- Mobile File List -->
+                <div class="d-md-none">
+                  <div 
+                    v-for="(file, index) in files"
+                    :key="`file-${index}`"
+                    class="card mb-2"
                   >
-                    <i class="bi bi-x-circle"></i>
-                  </button>
+                    <div class="card-body py-2">
+                      <div class="d-flex align-items-center">
+                        <div class="me-3">
+                          <i 
+                            :class="getFileIcon(file.type)" 
+                            class="fs-5 text-primary"
+                          ></i>
+                        </div>
+                        <div class="flex-grow-1">
+                          <div class="fw-medium text-truncate">{{ file.name }}</div>
+                          <small class="text-muted">{{ formatFileSize(file.size) }}</small>
+                        </div>
+                        <button
+                          type="button"
+                          class="btn btn-outline-danger btn-sm"
+                          @click="removeFile(index)"
+                        >
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Desktop File List -->
+                <div class="d-none d-md-block">
+                  <div class="list-group">
+                    <div
+                      v-for="(file, index) in files"
+                      :key="`file-${index}`"
+                      class="list-group-item d-flex justify-content-between align-items-center"
+                    >
+                      <div>
+                        <i :class="getFileIcon(file.type)" class="me-2 text-primary"></i>
+                        {{ file.name }}
+                        <small class="text-muted ms-2">({{ formatFileSize(file.size) }})</small>
+                      </div>
+                      <button
+                        type="button"
+                        class="btn btn-outline-danger btn-sm"
+                        @click="removeFile(index)"
+                      >
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
+
+            <!-- Mobile Upload Tip -->
+            <div class="d-md-none mt-3">
+              <div class="alert alert-light py-2">
+                <small class="text-muted">
+                  <i class="bi bi-info-circle me-1"></i>
+                  สามารถอัปโลดได้หลายไฟล์ในครั้งเดียว
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Summary Section -->
+          <div class="alert alert-info">
+            <h6 class="alert-heading">
+              <i class="bi bi-info-circle me-2"></i>
+              สรุปข้อมูล
+            </h6>
+            <hr>
+            <p class="mb-1"><strong>ชื่อเป้าหมาย:</strong> {{ form.target_name || 'ยังไม่ระบุ' }}</p>
+            <p class="mb-1"><strong>ประเภทการสำรวจ:</strong> {{ selectedSurveyTypeName || 'ยังไม่ระบุ' }}</p>
+            <p class="mb-1"><strong>ที่อยู่:</strong> {{ form.address || 'ยังไม่ระบุ' }}</p>
+            <p class="mb-0"><strong>ไฟล์แนบ:</strong> {{ files.length }} ไฟล์</p>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <button type="button" class="btn btn-outline-secondary btn-lg" @click="prevStep">
+              <i class="bi bi-arrow-left me-2"></i> ย้อนกลับ
+            </button>
+            <button type="submit" class="btn btn-success btn-lg" :disabled="isSubmitting">
+              <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+              <i v-else class="bi bi-check-lg me-2"></i>
+              {{ isSubmitting ? 'กำลังบันทึก...' : 'บันทึกแบบสำรวจ' }}
+            </button>
           </div>
         </div>
       </div>
-
-      <!-- Action Buttons -->
-      <div class="d-flex gap-3 justify-content-end">
-        <button
-          type="button"
-          class="btn btn-outline-secondary"
-          @click="goBack"
-          :disabled="loading"
-        >
-          ยกเลิก
-        </button>
-        <button type="submit" class="btn btn-primary" :disabled="loading">
-          <span
-            v-if="loading"
-            class="spinner-border spinner-border-sm me-2"
-          ></span>
-          <i v-else class="bi bi-check-circle me-2"></i>
-          สร้างการสำรวจ
-        </button>
-      </div>
     </form>
+
+    <!-- Mobile Step Navigation (Bottom Tabs) -->
+    <div class="d-md-none bg-white border-top fixed-bottom">
+      <div class="row g-0">
+        <div 
+          v-for="step in 4" 
+          :key="step"
+          class="col-3"
+        >
+          <button
+            type="button"
+            class="btn w-100 py-3 border-0 rounded-0"
+            :class="{
+              'btn-primary text-white': currentFormStep === step,
+              'btn-light text-muted': currentFormStep !== step,
+              'disabled': step > maxCompletedStep + 1
+            }"
+            @click="goToStep(step)"
+            :disabled="step > maxCompletedStep + 1"
+          >
+            <div class="d-flex flex-column align-items-center">
+              <i 
+                :class="getStepIcon(step)" 
+                class="fs-6 mb-1"
+              ></i>
+              <small style="font-size: 0.7rem;">{{ getStepLabel(step) }}</small>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Bottom Padding to prevent content being hidden by bottom nav -->
+    <div class="d-md-none" style="height: 80px;"></div>
   </div>
 </template>
 
@@ -816,6 +669,7 @@ import { useAuthStore } from "@/stores/auth";
 import surveyService from "@/services/surveyService";
 import masterDataService from "@/services/masterDataService";
 import SurveyFormProgress from "@/components/surveys/SurveyFormProgress.vue";
+import { showSuccessToast, showErrorToast, showWarningToast, showConfirmToast } from "@/utils/toast";
 import moment from "moment";
 
 export default {
@@ -828,10 +682,10 @@ export default {
     const authStore = useAuthStore();
 
     const loading = ref(false);
-    const fileInput = ref(null);
-    const selectedFiles = ref([]);
+    const isSubmitting = ref(false);
     const gettingLocation = ref(false);
     const currentFormStep = ref(1);
+    const maxCompletedStep = ref(1); // Track the highest step user has reached
 
     // Master data
     const surveyTypes = ref([]);
@@ -840,7 +694,8 @@ export default {
     const subdistricts = ref([]);
     const denominations = ref([]);
     const templeTypes = ref([]);
-    const surveyors = ref([]);
+    const positions = ref([]);
+    const banks = ref([]);
 
     // Form data
     const form = reactive({
@@ -850,12 +705,14 @@ export default {
       province: "",
       district: "",
       subdistrict: "",
-      postal_code: "",
-      gps_latitude: null,
-      gps_longitude: null,
+      latitude: "",
+      longitude: "",
+      surveyor_id: authStore.user?.id || "",
+      status: "draft",
       notes: "",
     });
 
+    // Temple specific data
     const templeDetails = reactive({
       temple_type_id: "",
       denomination_id: "",
@@ -863,136 +720,219 @@ export default {
       history_summary: "",
     });
 
-    // Personnel array
-    const personnel = ref([]);
+    // Files
+    const files = ref([]);
 
-    // Bank accounts array
+    // Personnel and Bank Accounts (for temple surveys)
+    const personnel = ref([]);
     const bankAccounts = ref([]);
 
+    // Errors
     const errors = ref({});
 
     // Computed properties
-    const today = computed(() => {
-      return moment().format("YYYY-MM-DD");
-    });
-
-    const isCurrentUserSurveyor = computed(() => {
-      return authStore.user?.role === "Surveyor";
-    });
-
-    const selectedSurveyType = computed(() => {
-      return surveyTypes.value.find((type) => type.type_id === form.type_id);
-    });
-
     const isTempleType = computed(() => {
-      return selectedSurveyType.value?.type_name === "วัด";
+      const selectedType = surveyTypes.value.find(
+        (type) => type.id === form.type_id
+      );
+      return selectedType?.name?.toLowerCase().includes("วัด") || false;
+    });
+
+    const selectedSurveyTypeName = computed(() => {
+      const selectedType = surveyTypes.value.find(
+        (type) => type.id === form.type_id
+      );
+      return selectedType?.name || "";
     });
 
     // Methods
-    const loadMasterData = async () => {
-      try {
-        // Load survey types
-        const typesResponse = await masterDataService.getSurveyTypes();
-        surveyTypes.value = typesResponse.data;
-
-        // Load provinces
-        const provincesResponse = await masterDataService.getProvinces();
-        provinces.value = provincesResponse.data;
-
-        // Load denominations
-        const denominationsResponse = await masterDataService.getSects();
-        denominations.value = denominationsResponse.data;
-
-        // Load temple types
-        const templeTypesResponse = await masterDataService.getTempleTypes();
-        templeTypes.value = templeTypesResponse.data;
-
-        // Load surveyors
-        const surveyorsResponse = await masterDataService.getSurveyors();
-        surveyors.value = surveyorsResponse.data;
-
-        // If current user is surveyor, auto-select them
-        if (isCurrentUserSurveyor.value) {
-          form.surveyor_id = authStore.user.id;
+    const nextStep = () => {
+      if (validateCurrentStep()) {
+        if (currentFormStep.value < 4) {
+          currentFormStep.value++;
+          maxCompletedStep.value = Math.max(maxCompletedStep.value, currentFormStep.value);
         }
-      } catch (err) {
-        console.error("Error loading master data:", err);
       }
     };
 
-    const onSurveyTypeChange = () => {
-      // Reset temple details when survey type changes
-      if (!isTempleType.value) {
-        Object.keys(templeDetails).forEach((key) => {
-          if (typeof templeDetails[key] === "string") {
-            templeDetails[key] = "";
-          } else if (typeof templeDetails[key] === "number") {
-            templeDetails[key] = 0;
-          } else {
-            templeDetails[key] = null;
-          }
-        });
-
-        // Reset personnel and bank accounts for non-temple types
-        personnel.value = [];
-        bankAccounts.value = [];
+    const prevStep = () => {
+      if (currentFormStep.value > 1) {
+        currentFormStep.value--;
       }
     };
 
-    // Personnel management
-    const addPersonnel = () => {
-      personnel.value.push({
-        role: "",
-        first_name: "",
-        last_name: "",
-        phone: "",
-      });
+    const goToStep = (step) => {
+      if (step <= maxCompletedStep.value + 1) {
+        if (step < currentFormStep.value || validateCurrentStep()) {
+          currentFormStep.value = step;
+          maxCompletedStep.value = Math.max(maxCompletedStep.value, step);
+        }
+      }
     };
 
-    const removePersonnel = (index) => {
-      personnel.value.splice(index, 1);
+    const getStepIcon = (step) => {
+      const icons = {
+        1: 'bi bi-info-circle',
+        2: 'bi bi-geo-alt',
+        3: 'bi bi-building',
+        4: 'bi bi-check-circle'
+      };
+      return icons[step] || 'bi bi-circle';
     };
 
-    // Bank account management
-    const addBankAccount = () => {
-      bankAccounts.value.push({
-        bank_name: "",
-        account_number: "",
-        account_name: "",
-        signatories: "",
-      });
+    const getStepLabel = (step) => {
+      const labels = {
+        1: 'ข้อมูลพื้นฐาน',
+        2: 'ที่ตั้ง',
+        3: 'รายละเอียด',
+        4: 'สรุป'
+      };
+      return labels[step] || `ขั้นตอน ${step}`;
     };
 
-    const removeBankAccount = (index) => {
-      bankAccounts.value.splice(index, 1);
+    const validateCurrentStep = () => {
+      errors.value = {};
+      let isValid = true;
+
+      if (currentFormStep.value === 1) {
+        if (!form.target_name.trim()) {
+          errors.value.target_name = "กรุณากรอกชื่อเป้าหมายการสำรวจ";
+          isValid = false;
+        }
+        if (!form.type_id) {
+          errors.value.type_id = "กรุณาเลือกประเภทการสำรวจ";
+          isValid = false;
+        }
+        if (!form.address.trim()) {
+          errors.value.address = "กรุณากรอกที่อยู่";
+          isValid = false;
+        }
+      }
+
+      if (currentFormStep.value === 2) {
+        if (!form.province) {
+          errors.value.province = "กรุณาเลือกจังหวัด";
+          isValid = false;
+        }
+        if (!form.district) {
+          errors.value.district = "กรุณาเลือกอำเภอ/เขต";
+          isValid = false;
+        }
+        if (!form.subdistrict) {
+          errors.value.subdistrict = "กรุณาเลือกตำบล/แขวง";
+          isValid = false;
+        }
+      }
+
+      if (currentFormStep.value === 3 && isTempleType.value) {
+        if (!templeDetails.temple_type_id) {
+          errors.value.temple_type_id = "กรุณาเลือกประเภทวัด";
+          isValid = false;
+        }
+        if (!templeDetails.denomination_id) {
+          errors.value.denomination_id = "กรุณาเลือกสังกัด/นิกาย";
+          isValid = false;
+        }
+        if (!templeDetails.monk_count || templeDetails.monk_count < 0) {
+          errors.value.monk_count = "กรุณาระบุจำนวนพระ";
+          isValid = false;
+        }
+      }
+
+      return isValid;
     };
 
-    // GPS location
     const getCurrentLocation = () => {
       if (!navigator.geolocation) {
-        alert("เบราว์เซอร์ของคุณไม่รองรับ GPS");
+        showConfirmToast(
+          "เบราว์เซอร์ของคุณไม่รองรับการหาตำแหน่ง GPS<br>ต้องการกรอกพิกัดด้วยตนเองหรือไม่?",
+          () => {
+            // Focus on latitude input for manual entry
+            document.getElementById('latitude')?.focus();
+          }
+        );
         return;
       }
 
       gettingLocation.value = true;
 
+      const options = {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
+      };
+
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          form.gps_latitude = position.coords.latitude;
-          form.gps_longitude = position.coords.longitude;
+          form.latitude = position.coords.latitude.toFixed(6);
+          form.longitude = position.coords.longitude.toFixed(6);
           gettingLocation.value = false;
+          
+          // Show success notification
+          showSuccessToast("ได้รับพิกัด GPS แล้ว");
         },
         (error) => {
           console.error("Error getting location:", error);
-          alert("ไม่สามารถใช้ตำแหน่ง GPS ได้");
           gettingLocation.value = false;
+          
+          let errorMessage = "ไม่สามารถหาตำแหน่งได้";
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = "กรุณาอนุญาตให้เข้าถึงตำแหน่งในเบราว์เซอร์";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = "ไม่สามารถหาตำแหน่งได้ กรุณาตรวจสอบสัญญาณ GPS";
+              break;
+            case error.TIMEOUT:
+              errorMessage = "หาพิกัดเกินเวลา กรุณาลองใหม่อีกครั้ง";
+              break;
+          }
+          
+          showConfirmToast(
+            `${errorMessage}<br>ต้องการกรอกพิกัดด้วยตนเองหรือไม่?`,
+            () => {
+              document.getElementById('latitude')?.focus();
+            }
+          );
         },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000,
-        }
+        options
       );
+    };
+
+    const handleFileUpload = (event) => {
+      const selectedFiles = Array.from(event.target.files);
+      
+      selectedFiles.forEach((file) => {
+        if (file.size > 5 * 1024 * 1024) {
+          showWarningToast(`ไฟล์ ${file.name} มีขนาดใหญ่เกิน 5MB`);
+          return;
+        }
+        files.value.push(file);
+      });
+    };
+
+    const removeFile = (index) => {
+      files.value.splice(index, 1);
+    };
+
+    const formatFileSize = (bytes) => {
+      if (bytes === 0) return "0 Bytes";
+      const k = 1024;
+      const sizes = ["Bytes", "KB", "MB", "GB"];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+    };
+
+    const getFileIcon = (fileType) => {
+      if (fileType.startsWith('image/')) {
+        return 'bi bi-file-earmark-image';
+      } else if (fileType === 'application/pdf') {
+        return 'bi bi-file-earmark-pdf';
+      } else if (fileType.includes('word') || fileType.includes('document')) {
+        return 'bi bi-file-earmark-word';
+      } else {
+        return 'bi bi-file-earmark';
+      }
     };
 
     const onProvinceChange = async () => {
@@ -1005,8 +945,8 @@ export default {
         try {
           const response = await masterDataService.getDistricts(form.province);
           districts.value = response.data;
-        } catch (err) {
-          console.error("Error loading districts:", err);
+        } catch (error) {
+          console.error("Error loading districts:", error);
         }
       }
     };
@@ -1017,140 +957,25 @@ export default {
 
       if (form.district) {
         try {
-          const response = await masterDataService.getSubdistricts(
-            form.province,
-            form.district
-          );
+          const response = await masterDataService.getSubdistricts(form.district);
           subdistricts.value = response.data;
-        } catch (err) {
-          console.error("Error loading subdistricts:", err);
+        } catch (error) {
+          console.error("Error loading subdistricts:", error);
         }
       }
     };
 
-    const handleFileSelect = (event) => {
-      const files = Array.from(event.target.files);
-
-      // Validate file size (10MB max per file)
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      const validFiles = files.filter((file) => {
-        if (file.size > maxSize) {
-          alert(`ไฟล์ ${file.name} มีขนาดใหญ่เกินไป (เกิน 10MB)`);
-          return false;
-        }
-        return true;
-      });
-
-      selectedFiles.value = [...selectedFiles.value, ...validFiles];
-
-      // Clear input
-      if (fileInput.value) {
-        fileInput.value.value = "";
-      }
-    };
-
-    const removeFile = (index) => {
-      selectedFiles.value.splice(index, 1);
-    };
-
-    const getFileIcon = (fileType) => {
-      if (fileType.startsWith("image/")) return "bi-image";
-      if (fileType.includes("pdf")) return "bi-file-earmark-pdf";
-      if (fileType.includes("word")) return "bi-file-earmark-word";
-      if (fileType.includes("excel") || fileType.includes("spreadsheet"))
-        return "bi-file-earmark-excel";
-      return "bi-file-earmark";
-    };
-
-    const formatFileSize = (bytes) => {
-      if (bytes === 0) return "0 Bytes";
-      const k = 1024;
-      const sizes = ["Bytes", "KB", "MB", "GB"];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-    };
-
-    const validateForm = () => {
-      errors.value = {};
-
-      // Basic validation
-      if (!form.target_name.trim()) {
-        errors.value.target_name = "กรุณาระบุชื่อเป้าหมายการสำรวจ";
-      }
-
-      if (!form.type_id) {
-        errors.value.type_id = "กรุณาเลือกประเภทการสำรวจ";
-      }
-
-      if (!form.address.trim()) {
-        errors.value.address = "กรุณาระบุที่อยู่";
-      }
-
-      if (!form.province) {
-        errors.value.province = "กรุณาเลือกจังหวัด";
-      }
-
-      if (!form.district) {
-        errors.value.district = "กรุณาเลือกอำเภอ";
-      }
-
-      if (!form.subdistrict) {
-        errors.value.subdistrict = "กรุณาเลือกตำบล";
-      }
-
-      // Temple details validation (only for temple type)
-      if (isTempleType.value) {
-        if (!templeDetails.temple_type_id) {
-          errors.value.temple_type_id = "กรุณาเลือกประเภทวัด";
-        }
-
-        if (!templeDetails.denomination_id) {
-          errors.value.denomination_id = "กรุณาเลือกสังกัด/นิกาย";
-        }
-
-        if (templeDetails.monk_count < 0) {
-          errors.value.monk_count = "จำนวนพระต้องเป็นจำนวนที่ไม่ต่ำกว่า 0";
-        }
-
-        // Personnel validation
-        personnel.value.forEach((person, index) => {
-          if (person.role && !person.first_name.trim()) {
-            errors.value[`personnel_${index}_first_name`] = "กรุณาระบุชื่อ";
-          }
-          if (person.role && !person.last_name.trim()) {
-            errors.value[`personnel_${index}_last_name`] = "กรุณาระบุนามสกุล";
-          }
-        });
-
-        // Bank account validation
-        bankAccounts.value.forEach((account, index) => {
-          if (!account.bank_name) {
-            errors.value[`bank_${index}_bank_name`] = "กรุณาเลือกธนาคาร";
-          }
-          if (!account.account_number.trim()) {
-            errors.value[`bank_${index}_account_number`] =
-              "กรุณาระบุเลขที่บัญชี";
-          }
-          if (!account.account_name.trim()) {
-            errors.value[`bank_${index}_account_name`] = "กรุณาระบุชื่อบัญชี";
-          }
-        });
-      }
-
-      return Object.keys(errors.value).length === 0;
-    };
-
-    const handleSubmit = async () => {
-      if (!validateForm()) {
+    const submitForm = async () => {
+      if (!validateCurrentStep()) {
         return;
       }
 
-      try {
-        loading.value = true;
+      isSubmitting.value = true;
 
+      try {
         // Prepare form data
         const formData = new FormData();
-
+        
         // Basic form data
         Object.keys(form).forEach((key) => {
           if (form[key] !== null && form[key] !== "") {
@@ -1158,147 +983,111 @@ export default {
           }
         });
 
-        // Set created_by to current user
-        formData.append("created_by", authStore.user.user_id);
-
-        // Temple details (only for temple type)
+        // Temple details if applicable
         if (isTempleType.value) {
           Object.keys(templeDetails).forEach((key) => {
             if (templeDetails[key] !== null && templeDetails[key] !== "") {
-              formData.append(`temple_details[${key}]`, templeDetails[key]);
-            }
-          });
-
-          // Personnel data
-          personnel.value.forEach((person, index) => {
-            if (
-              person.role ||
-              person.first_name ||
-              person.last_name ||
-              person.phone
-            ) {
-              formData.append(`personnel[${index}][role]`, person.role);
-              formData.append(
-                `personnel[${index}][first_name]`,
-                person.first_name
-              );
-              formData.append(
-                `personnel[${index}][last_name]`,
-                person.last_name
-              );
-              formData.append(`personnel[${index}][phone]`, person.phone);
-            }
-          });
-
-          // Bank accounts data
-          bankAccounts.value.forEach((account, index) => {
-            if (
-              account.bank_name ||
-              account.account_number ||
-              account.account_name
-            ) {
-              formData.append(
-                `bank_accounts[${index}][bank_name]`,
-                account.bank_name
-              );
-              formData.append(
-                `bank_accounts[${index}][account_number]`,
-                account.account_number
-              );
-              formData.append(
-                `bank_accounts[${index}][account_name]`,
-                account.account_name
-              );
-              formData.append(
-                `bank_accounts[${index}][signatories]`,
-                account.signatories
-              );
+              formData.append(`temple_${key}`, templeDetails[key]);
             }
           });
         }
 
         // Files
-        selectedFiles.value.forEach((file, index) => {
-          formData.append(`attachments`, file);
+        files.value.forEach((file, index) => {
+          formData.append(`files`, file);
         });
 
-        // Create survey
+        // Submit
         const response = await surveyService.createSurvey(formData);
 
-        // Show success message
-        alert("สร้างการสำรวจสำเร็จ");
-
-        // Redirect to survey detail or list
-        if (response.data?.target_id) {
-          router.push(`/surveys/${response.data.target_id}`);
-        } else {
+        if (response.data.success) {
+          showSuccessToast("สร้างแบบสำรวจเรียบร้อยแล้ว");
           router.push("/surveys");
-        }
-      } catch (err) {
-        console.error("Error creating survey:", err);
-
-        if (err.response?.data?.errors) {
-          errors.value = err.response.data.errors;
-        } else if (err.response?.data?.message) {
-          alert(err.response.data.message);
         } else {
-          alert("เกิดข้อผิดพลาดในการสร้างการสำรวจ กรุณาลองใหม่อีกครั้ง");
+          throw new Error(response.data.message || "เกิดข้อผิดพลาด");
         }
+      } catch (error) {
+        console.error("Error creating survey:", error);
+        showErrorToast("เกิดข้อผิดพลาดในการสร้างแบบสำรวจ");
+      } finally {
+        isSubmitting.value = false;
+      }
+    };
+
+    const loadMasterData = async () => {
+      loading.value = true;
+      try {
+        const [
+          surveyTypesRes,
+          provincesRes,
+          denominationsRes,
+          templeTypesRes,
+          positionsRes,
+          banksRes,
+        ] = await Promise.all([
+          masterDataService.getSurveyTypes(),
+          masterDataService.getProvinces(),
+          masterDataService.getDenominations(),
+          masterDataService.getTempleTypes(),
+          masterDataService.getPositions(),
+          masterDataService.getBanks(),
+        ]);
+
+        surveyTypes.value = surveyTypesRes.data;
+        provinces.value = provincesRes.data;
+        denominations.value = denominationsRes.data;
+        templeTypes.value = templeTypesRes.data;
+        positions.value = positionsRes.data;
+        banks.value = banksRes.data;
+      } catch (error) {
+        console.error("Error loading master data:", error);
+        showErrorToast("เกิดข้อผิดพลาดในการโหลดข้อมูล");
       } finally {
         loading.value = false;
       }
     };
 
-    const goBack = () => {
-      router.go(-1);
-    };
-
-    // Lifecycle
     onMounted(() => {
       loadMasterData();
     });
 
     return {
-      // Data
       loading,
-      fileInput,
-      selectedFiles,
+      isSubmitting,
       gettingLocation,
       currentFormStep,
+      maxCompletedStep,
       surveyTypes,
       provinces,
       districts,
       subdistricts,
       denominations,
       templeTypes,
-      surveyors,
+      positions,
+      banks,
       form,
       templeDetails,
+      files,
       personnel,
       bankAccounts,
       errors,
-
-      // Computed
-      today,
-      isCurrentUserSurveyor,
-      selectedSurveyType,
       isTempleType,
-
-      // Methods
-      onSurveyTypeChange,
+      selectedSurveyTypeName,
+      nextStep,
+      prevStep,
+      goToStep,
+      getStepIcon,
+      getStepLabel,
+      validateCurrentStep,
+      getCurrentLocation,
+      handleFileUpload,
+      removeFile,
+      formatFileSize,
+      getFileIcon,
       onProvinceChange,
       onDistrictChange,
-      addPersonnel,
-      removePersonnel,
-      addBankAccount,
-      removeBankAccount,
-      getCurrentLocation,
-      handleFileSelect,
-      removeFile,
-      getFileIcon,
-      formatFileSize,
-      handleSubmit,
-      goBack,
+      submitForm,
+      loadMasterData,
     };
   },
 };
@@ -1306,103 +1095,161 @@ export default {
 
 <style scoped>
 .survey-create {
-  max-width: 1200px;
+  max-width: 800px;
   margin: 0 auto;
   padding: 1rem;
 }
 
 .survey-header {
   background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
 }
 
 .survey-form {
   max-width: 100%;
 }
 
-.file-preview {
-  transition: box-shadow 0.2s ease-in-out;
+.card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s ease;
 }
 
-.file-preview:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
-.selected-files {
-  border-top: 1px solid #dee2e6;
-  padding-top: 1rem;
+.card-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 1px solid #dee2e6;
+  border-radius: 12px 12px 0 0 !important;
 }
 
-.personnel-item,
-.bank-account-item {
-  background: #f8f9fa;
-  transition: all 0.2s ease-in-out;
+.form-control-lg,
+.form-select-lg {
+  font-size: 1.1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 2px solid #e9ecef;
+  transition: all 0.2s ease;
 }
 
-.personnel-item:hover,
-.bank-account-item:hover {
-  background: #e9ecef;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.form-control-lg:focus,
+.form-select-lg:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
 }
 
-.spin {
-  animation: spin 1s linear infinite;
+.btn-lg {
+  padding: 0.75rem 1.5rem;
+  font-size: 1.1rem;
+  border-radius: 8px;
+  font-weight: 500;
 }
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.sticky-top {
+  z-index: 1020;
 }
 
-/* Mobile Responsiveness */
+.list-group-item {
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  border: 1px solid #e9ecef;
+}
+
+.alert {
+  border-radius: 12px;
+  border: none;
+}
+
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Mobile Optimizations */
 @media (max-width: 768px) {
   .survey-create {
     padding: 0.5rem;
+    margin-bottom: 80px; /* Space for bottom navigation */
   }
 
   .survey-header {
+    padding: 1.5rem;
+    border-radius: 8px;
+  }
+
+  .card {
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .card-header {
+    border-radius: 8px 8px 0 0 !important;
     padding: 1rem;
   }
 
-  .d-flex.gap-3 {
-    flex-direction: column;
+  .form-control-lg,
+  .form-select-lg {
+    font-size: 1rem;
+    padding: 0.75rem;
   }
 
-  .d-flex.gap-3 .btn {
-    width: 100%;
+  .btn-lg {
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
   }
 
-  .personnel-item,
-  .bank-account-item {
+  .d-flex.justify-content-between .btn {
+    flex: 1;
+    margin: 0 0.25rem;
+  }
+
+  .row .col-12 {
     margin-bottom: 1rem;
+  }
+
+  /* Bottom Navigation Styles */
+  .fixed-bottom {
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .fixed-bottom .btn {
+    transition: all 0.2s ease;
+  }
+
+  .fixed-bottom .btn:active {
+    transform: scale(0.95);
+  }
+
+  /* File upload buttons */
+  .btn.py-3 {
+    min-height: 80px;
+  }
+
+  /* Toast notification positioning */
+  .toast {
+    z-index: 9999 !important;
   }
 }
 
 @media (max-width: 575.98px) {
-  .row .col-md-6,
-  .row .col-md-4,
-  .row .col-md-3 {
+  .row .col-12.col-md-6,
+  .row .col-12.col-md-4 {
     margin-bottom: 1rem;
   }
 
-  .file-preview {
-    margin-bottom: 0.5rem;
+  .d-flex.justify-content-between {
+    flex-direction: column;
+    gap: 0.75rem;
   }
 
-  .personnel-item .row,
-  .bank-account-item .row {
+  .d-flex.justify-content-between .btn {
+    width: 100%;
     margin: 0;
-  }
-
-  .personnel-item .col-md-3,
-  .bank-account-item .col-md-4 {
-    padding: 0.25rem;
   }
 }
 </style>
