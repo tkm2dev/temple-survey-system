@@ -15,6 +15,9 @@ import DashboardHome from "@/views/dashboard/DashboardHome.vue";
 
 // Survey Pages
 import SurveyList from "@/views/surveys/SurveyList.vue";
+import SurveyTempleList from "@/views/surveys/SurveyTempleList.vue";
+import TempleFormCreate from "@/views/surveys/TempleFormCreate.vue";
+import PendingReviewsList from "@/views/surveys/PendingReviewsList.vue";
 import SurveyDetail from "@/views/surveys/SurveyDetail.vue";
 import SurveyCreate from "@/views/surveys/SurveyCreate.vue";
 import SurveyEdit from "@/views/surveys/SurveyEdit.vue";
@@ -114,6 +117,37 @@ const routes = [
             { text: "หน้าแรก", to: "/" },
             { text: "ข้อมูลการสำรวจ" },
           ],
+        },
+      },
+      {
+        path: "surveys/temples",
+        name: "SurveyTempleList",
+        component: SurveyTempleList,
+        meta: {
+          title: "รายการวัด",
+          breadcrumb: [{ text: "หน้าแรก", to: "/" }, { text: "รายการวัด" }],
+        },
+      },
+      {
+        path: "surveys/temples/create",
+        name: "TempleFormCreate",
+        component: TempleFormCreate,
+        meta: {
+          title: "บันทึกวัดใหม่",
+          breadcrumb: [
+            { text: "หน้าแรก", to: "/" },
+            { text: "รายการวัด", to: "/surveys/temples" },
+            { text: "บันทึกวัดใหม่" },
+          ],
+        },
+      },
+      {
+        path: "surveys/pending",
+        name: "PendingReviewsList",
+        component: PendingReviewsList,
+        meta: {
+          title: "รอตรวจสอบ",
+          breadcrumb: [{ text: "หน้าแรก", to: "/" }, { text: "รอตรวจสอบ" }],
         },
       },
       {

@@ -18,6 +18,35 @@ export const surveyService = {
     return response.data;
   },
 
+  // Survey Targets Management
+  async getSurveyTargets(params = {}) {
+    const response = await api.get("/surveys/targets", { params });
+    return response.data;
+  },
+
+  async createSurveyTarget(data) {
+    const response = await api.post("/surveys/targets", data);
+    return response.data;
+  },
+
+  async updateSurveyTarget(id, data) {
+    const response = await api.put(`/surveys/targets/${id}`, data);
+    return response.data;
+  },
+
+  async deleteSurveyTarget(id) {
+    const response = await api.delete(`/surveys/targets/${id}`);
+    return response.data;
+  },
+
+  async exportSurveyTargets(params = {}) {
+    const response = await api.get("/surveys/targets/export", {
+      params,
+      responseType: "blob",
+    });
+    return response;
+  },
+
   // Get single survey
   async getSurvey(id) {
     const response = await api.get(`/surveys/${id}`);

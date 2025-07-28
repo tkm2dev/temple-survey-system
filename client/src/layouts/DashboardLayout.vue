@@ -12,7 +12,7 @@
         <div class="d-flex align-items-center">
           <!-- Mobile Menu Toggle -->
           <button
-            class="navbar- // Load notifications loadNotifications(); // Cleanup on unmount onUnmounted(() => { // Cleanup if needed }); });e me-2"
+            class="navbar-toggler d-lg-none me-2"
             type="button"
             @click="toggleSidebar"
           >
@@ -182,55 +182,98 @@
           <li class="nav-item">
             <router-link to="/" class="nav-link" exact-active-class="active">
               <i class="bi bi-house-door"></i>
-              <span>หน้าแรก</span>
+              <span>หน้าหลัก</span>
             </router-link>
           </li>
 
-          <!-- Survey Management -->
+          <!-- Temple Survey Management -->
           <li class="nav-item">
-            <router-link to="/surveys" class="nav-link" active-class="active">
-              <i class="bi bi-clipboard-data"></i>
-              <span>ข้อมูลการสำรวจ</span>
-            </router-link>
-          </li>
-
-          <!-- User Management (Admin only) -->
-          <li v-if="authStore.hasRole('Admin')" class="nav-item">
             <div class="nav-group">
-              <router-link to="/users" class="nav-link" active-class="active">
-                <i class="bi bi-people"></i>
-                <span>จัดการผู้ใช้งาน</span>
-              </router-link>
+              <div class="nav-link nav-group-header">
+                <i class="bi bi-building text-warning"></i>
+                <span>สำรวจข้อมูลวัด</span>
+              </div>
+              <ul class="nav-group-list">
+                <li>
+                  <router-link
+                    to="/surveys/temples"
+                    class="nav-link nav-sublink"
+                    active-class="active"
+                  >
+                    <i class="bi bi-list-ul"></i>
+                    <span>รายการวัด</span>
+                  </router-link>
+                </li>
+                <li>
+                  <router-link
+                    to="/surveys/temples/create"
+                    class="nav-link nav-sublink"
+                    active-class="active"
+                  >
+                    <i class="bi bi-plus-circle text-success"></i>
+                    <span>บันทึกวัดใหม่</span>
+                  </router-link>
+                </li>
+                <li>
+                  <router-link
+                    to="/surveys/pending"
+                    class="nav-link nav-sublink"
+                    active-class="active"
+                  >
+                    <i class="bi bi-clock text-warning"></i>
+                    <span>รอตรวจสอบ</span>
+                  </router-link>
+                </li>
+              </ul>
             </div>
           </li>
 
-          <!-- Master Data (Admin only) -->
+          <!-- Admin Functions (Admin only) -->
           <li v-if="authStore.hasRole('Admin')" class="nav-item">
-            <router-link
-              to="/master-data"
-              class="nav-link"
-              active-class="active"
-            >
-              <i class="bi bi-gear"></i>
-              <span>ข้อมูลหลัก</span>
-            </router-link>
-          </li>
-
-          <!-- Audit Logs (Admin only) -->
-          <li v-if="authStore.hasRole('Admin')" class="nav-item">
-            <router-link to="/audit" class="nav-link" active-class="active">
-              <i class="bi bi-clock-history"></i>
-              <span>ประวัติการใช้งาน</span>
-            </router-link>
+            <div class="nav-group">
+              <div class="nav-link nav-group-header">
+                <i class="bi bi-shield-check text-danger"></i>
+                <span>จัดการระบบ</span>
+              </div>
+              <ul class="nav-group-list">
+                <li>
+                  <router-link
+                    to="/users"
+                    class="nav-link nav-sublink"
+                    active-class="active"
+                  >
+                    <i class="bi bi-people"></i>
+                    <span>จัดการผู้ใช้</span>
+                  </router-link>
+                </li>
+                <li>
+                  <router-link
+                    to="/audit"
+                    class="nav-link nav-sublink"
+                    active-class="active"
+                  >
+                    <i class="bi bi-clock-history"></i>
+                    <span>ประวัติการใช้งาน</span>
+                  </router-link>
+                </li>
+              </ul>
+            </div>
           </li>
 
           <!-- Divider -->
           <li><hr class="dropdown-divider my-2" /></li>
 
-          <!-- Settings -->
+          <!-- Profile & Settings -->
+          <li class="nav-item">
+            <router-link to="/profile" class="nav-link" active-class="active">
+              <i class="bi bi-person-circle"></i>
+              <span>ข้อมูลส่วนตัว</span>
+            </router-link>
+          </li>
+
           <li class="nav-item">
             <router-link to="/settings" class="nav-link" active-class="active">
-              <i class="bi bi-gear-fill"></i>
+              <i class="bi bi-gear"></i>
               <span>การตั้งค่า</span>
             </router-link>
           </li>
@@ -702,6 +745,38 @@ onMounted(async () => {
 /* Navigation Group and Submenu Styles */
 .nav-group {
   position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.nav-group-header {
+  cursor: default;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9) !important;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 0.375rem;
+  margin-bottom: 0.25rem;
+  padding: 0.625rem 1rem;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.nav-group-header i {
+  margin-right: 0.5rem;
+  font-size: 1rem;
+  width: 20px;
+  text-align: center;
+}
+
+.nav-group-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  margin-left: 1rem;
+}
+
+.nav-group-list li {
+  margin-bottom: 0.125rem;
 }
 
 .nav-submenu {
@@ -717,17 +792,31 @@ onMounted(async () => {
   padding: 0.4rem 1rem !important;
   color: rgba(255, 255, 255, 0.75) !important;
   position: relative;
+  border-radius: 0.25rem;
+  margin-bottom: 0.125rem;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.nav-sublink i {
+  margin-right: 0.5rem;
+  font-size: 0.875rem;
+  width: 16px;
+  text-align: center;
 }
 
 .nav-sublink:hover {
   color: white !important;
   background-color: rgba(255, 255, 255, 0.1);
+  text-decoration: none;
 }
 
 .nav-sublink.active {
   color: white !important;
   background-color: rgba(255, 255, 255, 0.2);
-  border-left: 3px solid #fff;
+  border-left: 3px solid var(--bs-primary, #0d6efd);
 }
 
 .nav-sublink .badge {
